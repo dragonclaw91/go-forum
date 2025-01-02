@@ -8,7 +8,11 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"time"
+
+	"github.com/joho/godotenv"
+	"github.com/mailgun/mailgun-go/v4"
 
 	"github.com/shaj13/libcache"
 	_ "github.com/shaj13/libcache/fifo"
@@ -48,6 +52,8 @@ var tokenStrategy auth.Strategy
 var cacheObj libcache.Cache
 var strategy union.Union
 var keeper jwt.SecretsKeeper
+var mg *mailgun.MailgunImpl
+var domain = "mailgun@sandbox6c8c2818826c45adbfc2c1d105b3172a.mailgun.org"
 
 // JWT expiration times
 var accessTokenExpiration = time.Minute * 15     // 15 minutes for access token
@@ -331,6 +337,7 @@ func hashPassword(password string) string {
 }
 
 func init() {
+	mg = mailgun.NewMailgun(domain, os.Getenv("KEY"))
 	var err error
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
@@ -496,7 +503,10 @@ func signup(c *gin.Context) {
 }
 
 func main() {
-
+	err := godotenv.Load()
+	if err != nil {
+		panic(err)
+	}
 	setupGoGuardian()
 	router := gin.Default()
 
