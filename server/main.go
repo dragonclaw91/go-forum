@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
@@ -53,7 +54,7 @@ var cacheObj libcache.Cache
 var strategy union.Union
 var keeper jwt.SecretsKeeper
 var mg *mailgun.MailgunImpl
-var domain = "mailgun@sandbox6c8c2818826c45adbfc2c1d105b3172a.mailgun.org"
+var domain = "sandbox6c8c2818826c45adbfc2c1d105b3172a.mailgun.org"
 
 // JWT expiration times
 var accessTokenExpiration = time.Minute * 15     // 15 minutes for access token
@@ -336,8 +337,71 @@ func hashPassword(password string) string {
 	}
 }
 
-func init() {
+func sendResetEmail(userEmail, resetToken string) error {
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	// Create the email message
+	subject := "Password Reset Request"
+	body := fmt.Sprintf(`
+Hello,
+
+We received a request to reset your password. Click the link below to reset it:
+
+http://localhost:5000/reset-password?token=%s
+
+If you did not request a password reset, please ignore this email.
+
+Regards,
+Your Application
+`, resetToken)
+
+	println("DOMAINCHECK", "no-reply@"+domain)
+	// Send the email
+	message := mailgun.NewMessage(
+		"no-reply@"+domain, // From
+		subject,            // Subject
+		body,               // Body (Plain Text)
+		userEmail,          // To
+	)
+
+	// Send the email
+	_, _, err := mg.Send(ctx, message)
+	if err != nil {
+		println("FAILING SO HARD", err.Error())
+		return fmt.Errorf("failed to send email: %v", err)
+	}
+	return nil
+}
+
+func resetPasswordHandler(c *gin.Context) {
+
+	print("CHECK KEY", os.Getenv("KEY"))
 	mg = mailgun.NewMailgun(domain, os.Getenv("KEY"))
+	// You can extract the reset token from the query string
+	// token := c.DefaultQuery("token", "")
+	// if token == "" {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Token is missing"})
+	// 	return
+	// }
+
+	// Example: User email address (would come from the token claims)
+	userEmail := "david_brownjr1991@hotmail.com"
+
+	// Send a password reset email
+	err := sendResetEmail(userEmail, "SUPERCOLLENCRYTEDTOKEN")
+	if err != nil {
+		println("SEND ERROR", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send reset email"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password reset email sent"})
+}
+
+func init() {
+
 	var err error
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
@@ -515,6 +579,7 @@ func main() {
 	router.POST("/v1/auth/login", loginHandler)
 	router.POST("/v1/auth/refresh", refreshHandler)
 	router.POST("v1/signup", signup)
+	router.POST("v1/forgot_password", resetPasswordHandler)
 	router.GET("/v1/auth/token", middleware(createToken))
 
 	// Start and run the server
