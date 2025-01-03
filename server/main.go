@@ -1,20 +1,16 @@
 package main
 
 import (
-	"context"
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
-	"os"
+
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/mailgun/mailgun-go/v4"
-
 	"github.com/shaj13/libcache"
 	_ "github.com/shaj13/libcache/fifo"
 
@@ -46,6 +42,7 @@ type Result struct {
 // Global variables
 var jwtSecret []byte     // Secret for access token
 var refreshSecret []byte // Secret for refresh token
+
 var db *sql.DB
 var Rsecret string
 var Asecret string
@@ -53,7 +50,7 @@ var tokenStrategy auth.Strategy
 var cacheObj libcache.Cache
 var strategy union.Union
 var keeper jwt.SecretsKeeper
-var mg *mailgun.MailgunImpl
+
 var domain = "sandbox6c8c2818826c45adbfc2c1d105b3172a.mailgun.org"
 
 // JWT expiration times
@@ -94,10 +91,6 @@ func generateRandomJWTSecret() error {
 		return fmt.Errorf("failed to generate refresh token secret: %w", err)
 	}
 	refreshSecret = refreshTokenSecret
-
-	// Log the secrets (for debugging purposes, but remember to never log in production)
-	// log.Printf("Generated JWT Secret (Base64): %s", base64.StdEncoding.EncodeToString(jwtSecret))
-	// log.Printf("Generated Refresh Secret (Base64): %s", base64.StdEncoding.EncodeToString(refreshTokenSecret))
 
 	return nil
 }
@@ -150,9 +143,6 @@ func loginHandler(c *gin.Context) {
 
 		//Generate refresh token
 		// Generate secure random JWT secrets for both access and refresh tokens
-		// if err := generateRandomJWTSecret(); err != nil {
-		// 	log.Fatalf("Error generating JWT secret: %v", err)
-		// }
 		refreshToken, err := generateJWTToken(creds.Name, refreshTokenExpiration, refreshSecret)
 		if err != nil {
 			// if we cant generate a refresh token return this
@@ -185,21 +175,6 @@ func validUser(hashedPassword, password string) bool {
 		fmt.Println("Password match!")
 		return true
 	}
-	// if err := c.ShouldBindJSON(&login); err != nil {
-	// 	// if we can't parse the json return this
-	// 	log.Printf("Error binding JSON: %v", err)
-	// 	c.JSON(400, gin.H{"error": "Invalid request"})
-	// 	return false
-	// }
-	// // err := db.Query()
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// defer rows.Close()
-	// println("CHECKING RESULT", login)
-	// TODO rig up an actual query to the database
-	// using dummy data looking for these valuse in the request
-	// return false
 }
 
 // generateJWTToken creates a JWT token with the given expiration and secret
@@ -212,12 +187,6 @@ func generateJWTToken(username string, expiration time.Duration, secret []byte) 
 	}
 	// create the token
 	token := dgjwt.NewWithClaims(dgjwt.SigningMethodHS256, claims)
-	// Sign the token with the passed secret
-	// Generate secure random JWT secrets for both access and refresh tokens
-	// if err := generateRandomJWTSecret(); err != nil {
-	// 	log.Fatalf("Error generating JWT secret: %v", err)
-	// }
-	log.Printf("CREATE secret: %s", base64.StdEncoding.EncodeToString(secret))
 	tokenString, err := token.SignedString(secret)
 	if err != nil {
 		return "", err
@@ -240,10 +209,6 @@ func refreshHandler(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "Invalid request"})
 		return
 	}
-	// refreshToken = req.RefreshToken
-	println("TOKEN", req.RefreshToken)
-	log.Printf("Base64 encoded secret: %s", base64.StdEncoding.EncodeToString(refreshSecret))
-	// log.Printf("JWT 1Secret (Base64): %s", base64.StdEncoding.EncodeToString(refreshSecret))
 
 	// Validate the refresh token with the refresh secret
 	claims, err := validateJWT(req.RefreshToken, refreshSecret)
@@ -252,7 +217,6 @@ func refreshHandler(c *gin.Context) {
 		c.JSON(401, gin.H{"error": "Invalid refresh token again"})
 		return
 	}
-	println("MOVING ON")
 	// Generate a new access token if the refresh token is valid
 	accessToken, err := generateJWTToken(claims["sub"].(string), accessTokenExpiration, jwtSecret)
 	if err != nil {
@@ -337,69 +301,6 @@ func hashPassword(password string) string {
 	}
 }
 
-func sendResetEmail(userEmail, resetToken string) error {
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-
-	// Create the email message
-	subject := "Password Reset Request"
-	body := fmt.Sprintf(`
-Hello,
-
-We received a request to reset your password. Click the link below to reset it:
-
-http://localhost:5000/reset-password?token=%s
-
-If you did not request a password reset, please ignore this email.
-
-Regards,
-Your Application
-`, resetToken)
-
-	println("DOMAINCHECK", "no-reply@"+domain)
-	// Send the email
-	message := mailgun.NewMessage(
-		"no-reply@"+domain, // From
-		subject,            // Subject
-		body,               // Body (Plain Text)
-		userEmail,          // To
-	)
-
-	// Send the email
-	_, _, err := mg.Send(ctx, message)
-	if err != nil {
-		println("FAILING SO HARD", err.Error())
-		return fmt.Errorf("failed to send email: %v", err)
-	}
-	return nil
-}
-
-func resetPasswordHandler(c *gin.Context) {
-
-	print("CHECK KEY", os.Getenv("KEY"))
-	mg = mailgun.NewMailgun(domain, os.Getenv("KEY"))
-	// You can extract the reset token from the query string
-	// token := c.DefaultQuery("token", "")
-	// if token == "" {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Token is missing"})
-	// 	return
-	// }
-
-	// Example: User email address (would come from the token claims)
-	userEmail := "david_brownjr1991@hotmail.com"
-
-	// Send a password reset email
-	err := sendResetEmail(userEmail, "SUPERCOLLENCRYTEDTOKEN")
-	if err != nil {
-		println("SEND ERROR", err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send reset email"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Password reset email sent"})
-}
-
 func init() {
 
 	var err error
@@ -418,121 +319,6 @@ func init() {
 		panic(err)
 	}
 }
-
-func taskGet() Result {
-
-	rows, err := db.Query(`SELECT name,password FROM "users"`)
-	// err := db.Query()
-	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
-	var tasks []Task
-	// Loop through rows, using Scan to assign column data to struct fields.
-	for rows.Next() {
-		var task Task
-		if err := rows.Scan(&task.Id, &task.Task, &task.IsCompleted); err != nil {
-			fmt.Println("<<<<<<< In the Get Function >>>>>>>>>", err)
-			return Result{tasks, err}
-		}
-		tasks = append(tasks, task)
-	}
-	if err = rows.Err(); err != nil {
-		return Result{tasks, err}
-	}
-
-	return Result{tasks, nil}
-
-}
-
-func taskPostPut(c *gin.Context, sql string, arg string, ids string) {
-	var err error
-	// Handle the POST request...
-	// stmt, err :=
-	// if err != nil {
-	// 	log.Println(err)
-	// 	return false
-	//    }
-	//    defer stmt.Close()
-	// Read the request body
-	body, err := io.ReadAll(c.Request.Body)
-	// fmt.Println(body)
-	println("CHECKING THE BODY", string(body))
-	// if err != nil {
-	// 	http.Error(w, "Failed to read request body", http.StatusInternalServerError)
-	// 	return
-	// }
-	defer c.Request.Body.Close()
-
-	// Parse the JSON body
-	// var task Task
-	// var user Login
-
-	// if ids == "" {
-	// 	fmt.Println("New DELETE:", string(body))
-	// 	if err := json.Unmarshal(body, &user); err != nil {
-	// 		fmt.Println("Error unmarshalling JSON:", err)
-	// 		return
-	// 	}
-	// }
-	sqlStatement := sql
-
-	id := ""
-	if arg == "POST" {
-		// err = db.QueryRow(`SELECT name FROM users WHERE name=$1`, user.Name).Scan(&id)
-		if err == nil {
-			data := gin.H{
-				"message": "There was a problem",
-			}
-			c.JSON(http.StatusOK, data)
-		} else {
-			// user.Password = hashPassword(user.Password)
-			// if user.Password == "Error Hashing" {
-			// 	data := gin.H{
-			// 		"message": "There was a problem",
-			// 	}
-			// 	c.JSON(http.StatusOK, data)
-			// } else {
-			// 	err = db.QueryRow(sqlStatement, user.Name, user.Password).Scan(&id)
-			// }
-		}
-
-	}
-	// if arg == "PUT" {
-	// 	// fmt.Println("New DELETE:", task)
-	// 	err = db.QueryRow(sqlStatement, task.Id).Scan(&id)
-	// }
-	if arg == "DELETE" {
-		// fmt.Println("New DELETE:", ids)
-		err = db.QueryRow(sqlStatement, ids).Scan(&id)
-	}
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("New record ID is:", arg)
-
-}
-
-// func handler(w http.ResponseWriter, r *http.Request) {
-// 	fmt.Println("<<<<<<< In the handler >>>>>>>>>")
-// 	switch r.Method {
-// 	case http.MethodGet:
-// 		taskGet()
-// 	case http.MethodPost:
-// 		taskPostPut(w, r, `
-// 		INSERT INTO "List" ("task")
-// 		VALUES ($1) RETURNING id`, "POST")
-// 		fmt.Fprintln(w, "You made a POST request!")
-// 	case http.MethodPut:
-// 		taskPostPut(w, r, `UPDATE "List" SET "isComplete"=NOT "isComplete","completed_at"=NOW() WHERE "id"=$1 RETURNING id`, "PUT")
-// 		fmt.Fprintln(w, "You made a PUT request!")
-// 	case http.MethodDelete:
-// 		fmt.Fprintln(w, "You made a DELETE request!")
-// 		taskPostPut(w, r, ` DELETE FROM "List" WHERE "id"=$1 RETURNING id`, "PUT")
-// 	default:
-// 		http.Error(w, "Unsupported HTTP method", http.StatusMethodNotAllowed)
-// 	}
-// }
 
 func signup(c *gin.Context) {
 
@@ -579,15 +365,11 @@ func main() {
 	router.POST("/v1/auth/login", loginHandler)
 	router.POST("/v1/auth/refresh", refreshHandler)
 	router.POST("v1/signup", signup)
-	router.POST("v1/forgot_password", resetPasswordHandler)
 	router.GET("/v1/auth/token", middleware(createToken))
 
 	// Start and run the server
 	router.Run(":5000")
-	// fmt.Println("New record ID is:", id)
-	// http.HandleFunc("/", handler)
 
 	fmt.Println("Server is running on http://localhost:5000")
-	// http.ListenAndServe(":8080", nil)
 	fmt.Println("Successfully connected!")
 }
