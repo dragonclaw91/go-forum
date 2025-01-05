@@ -28,18 +28,62 @@ import (
 var jwtSecret []byte     // Secret for access token
 var refreshSecret []byte // Secret for refresh token
 
-var db *sql.DB
+// var db *sql.DB
 
 // var Rsecret string
 // var Asecret string
 // var tokenStrategy auth.Strategy
-var cacheObj libcache.Cache
+// var cacheObj libcache.Cache
 var strategy union.Union
 var keeper jwt.SecretsKeeper
 
 // JWT expiration times
 var accessTokenExpiration = time.Minute * 15     // 15 minutes for access token
 var refreshTokenExpiration = time.Hour * 24 * 30 // 30 days for refresh token
+
+func Middleware(next gin.HandlerFunc) gin.HandlerFunc {
+
+	// Struct to match the expected JSON data
+	type RequestData struct {
+		AccessToken string `json:"access_token"`
+	}
+
+	return func(c *gin.Context) {
+
+		var requestData RequestData
+
+		// Parse JSON body into the requestData struct
+		if err := c.ShouldBindJSON(&requestData); err != nil {
+			// If there’s an error unmarshalling, respond with an error
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
+			return
+		}
+		// Print a specific field (e.g., access_token)
+		fmt.Println("Access TokenZ:", requestData.AccessToken)
+		println("IN THE MIDDLEWARE", c.DefaultPostForm("access_token", ""))
+
+		// You can proceed with unmarshalling as usual
+		// var jsonData map[string]interface{}
+		// if err := c.ShouldBindJSON(&jsonData); err != nil {
+		// 	println("ERROR???", err.Error())
+		// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
+		// 	return
+		// }
+		_, err := ValidateJWT(requestData.AccessToken, jwtSecret)
+		if err != nil {
+			println("ERROR", err)
+			c.JSON(401, gin.H{"error": "Unauthorized"})
+			c.Abort()
+			return
+		}
+
+		// Store the entire *http.Request in the context
+		c.Set("request", c.Request)
+
+		log.Println("Executing Auth Middleware")
+		next(c)
+	}
+}
 
 func SetupGoGuardian() {
 	// fmt.Println("Hello,")
@@ -54,7 +98,8 @@ func SetupGoGuardian() {
 }
 
 // LoginHandler generates both access and refresh tokens
-func LoginHandler(c *gin.Context) {
+func LoginHandler(c *gin.Context, db *sql.DB) {
+
 	var creds struct {
 		Name     string `json:"username"`
 		Password string `json:"password"`
@@ -64,16 +109,28 @@ func LoginHandler(c *gin.Context) {
 	if err := c.ShouldBindJSON(&creds); err != nil {
 		// return this if we can't parse the data
 		c.JSON(400, gin.H{"error": "Invalid request"})
-		return
+		// return
 	}
+
 	name := creds.Name
 	password := creds.Password
-	rows, err := db.Query(`SELECT password FROM "users" WHERE name= $1`, name)
+	println("FIRST LINE")
 
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Panic in queryData:", r)
+		}
+	}()
+
+	rows, err := db.Query(`SELECT password FROM "users" WHERE name= $1`, name)
+	println("SECOND LINE")
 	// err := db.Query()
 	if err != nil {
+
+		println(err.Error())
 		log.Fatalf("Query error: %v", err)
 	}
+
 	defer rows.Close()
 	if rows.Next() { // Iterate through the result set
 		err := rows.Scan(&password) // Scan the result into the password variable
@@ -96,7 +153,7 @@ func LoginHandler(c *gin.Context) {
 		if err != nil {
 			// if we cant generate a access token return this
 			c.JSON(500, gin.H{"error": "Failed to generate token"})
-			return
+			// return
 		}
 
 		//Generate refresh token
@@ -105,7 +162,7 @@ func LoginHandler(c *gin.Context) {
 		if err != nil {
 			// if we cant generate a refresh token return this
 			c.JSON(500, gin.H{"error": "Failed to generate refresh token"})
-			return
+			// return
 		}
 
 		// Send both tokens to the client
@@ -192,7 +249,7 @@ func RefreshHandler(c *gin.Context) {
 	}
 
 	// Validate the refresh token with the refresh secret
-	claims, err := validateJWT(req.RefreshToken, refreshSecret)
+	claims, err := ValidateJWT(req.RefreshToken, refreshSecret)
 	// println("ERRR", err.Error())
 	if err != nil {
 		c.JSON(401, gin.H{"error": "Invalid refresh token again"})
@@ -220,7 +277,7 @@ func RefreshHandler(c *gin.Context) {
 }
 
 // validateJWT validates the JWT token (either access or refresh)
-func validateJWT(tokenString string, secret []byte) (dgjwt.MapClaims, error) {
+func ValidateJWT(tokenString string, secret []byte) (dgjwt.MapClaims, error) {
 	// return the secret to vierify signature
 	log.Printf("JWT Secret (Base64): %s", base64.StdEncoding.EncodeToString(secret))
 	log.Printf("JWT Token: %s", tokenString)
@@ -266,12 +323,12 @@ func Signup(c *gin.Context) {
 		}
 		c.JSON(http.StatusOK, data)
 	} else {
-		_, err := db.Exec("INSERT INTO users (name, password) VALUES ($1, $2)", creds.Name, creds.Password)
-		if err != nil {
-			log.Fatal(err)
-			c.JSON(500, gin.H{"error": "Failed to insert user"})
-			return
-		}
+		// _, err := db.Exec("INSERT INTO users (name, password) VALUES ($1, $2)", creds.Name, creds.Password)
+		// if err != nil {
+		// 	log.Fatal(err)
+		// 	c.JSON(500, gin.H{"error": "Failed to insert user"})
+		// 	return
+		// }
 
 		// Respond with success message or status
 		c.JSON(200, gin.H{"message": "User created successfully"})
