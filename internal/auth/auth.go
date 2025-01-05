@@ -1,4 +1,4 @@
-package main
+package Myauth
 
 import (
 	"crypto/rand"
@@ -10,93 +10,51 @@ import (
 
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/shaj13/libcache"
 	_ "github.com/shaj13/libcache/fifo"
 
-	"github.com/gin-contrib/cors"
+	// "github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	dgjwt "github.com/golang-jwt/jwt"
-	"github.com/google/uuid"
+
+	// "github.com/google/uuid"
 	_ "github.com/lib/pq"
-	"github.com/shaj13/go-guardian/v2/auth"
 	"github.com/shaj13/go-guardian/v2/auth/strategies/jwt"
 	"github.com/shaj13/go-guardian/v2/auth/strategies/union"
 	"golang.org/x/crypto/bcrypt"
 )
-
-// const creditScoreMin = 500
-// const creditScoreMax = 900
-
-type Task struct {
-	Id          string `json:"id"`
-	Task        string `json:"task"`
-	IsCompleted string `json:"iscompleted"`
-}
-
-type Result struct {
-	Value []Task
-	Err   error
-}
 
 // Global variables
 var jwtSecret []byte     // Secret for access token
 var refreshSecret []byte // Secret for refresh token
 
 var db *sql.DB
-var Rsecret string
-var Asecret string
-var tokenStrategy auth.Strategy
+
+// var Rsecret string
+// var Asecret string
+// var tokenStrategy auth.Strategy
 var cacheObj libcache.Cache
 var strategy union.Union
 var keeper jwt.SecretsKeeper
-
-var domain = "sandbox6c8c2818826c45adbfc2c1d105b3172a.mailgun.org"
 
 // JWT expiration times
 var accessTokenExpiration = time.Minute * 15     // 15 minutes for access token
 var refreshTokenExpiration = time.Hour * 24 * 30 // 30 days for refresh token
 
-const (
-	host     = "localhost"
-	port     = 5400
-	user     = "postgres"
-	password = "postgres"
-	dbname   = "Forum"
-)
-
-func createToken(c *gin.Context) {
-	println("CREATING TOKEN", c)
-	token := uuid.New().String()
-	user := auth.User(c.Request)
-	auth.Append(tokenStrategy, token, user)
-	body := fmt.Sprintf("token: %s \n", token)
-	c.String(http.StatusOK, body)
-}
-
-// Generate secure random JWT secrets for both access and refresh tokens
-func generateRandomJWTSecret() error {
-	// Generate a secret for the access token (JWT secret)
-	accessTokenSecret := make([]byte, 32) // 256 bits = 32 bytes
-	_, err := rand.Read(accessTokenSecret)
-	if err != nil {
-		return fmt.Errorf("failed to generate access token secret: %w", err)
+func SetupGoGuardian() {
+	// fmt.Println("Hello,")
+	keeper = jwt.StaticSecret{
+		Secret:    jwtSecret,
+		Algorithm: jwt.HS256,
 	}
-	jwtSecret = accessTokenSecret
-
-	// Generate a separate secret for the refresh token
-	refreshTokenSecret := make([]byte, 32) // 256 bits = 32 bytes
-	_, err = rand.Read(refreshTokenSecret)
-	if err != nil {
-		return fmt.Errorf("failed to generate refresh token secret: %w", err)
-	}
-	refreshSecret = refreshTokenSecret
-
-	return nil
+	cache := libcache.FIFO.New(0)
+	cache.SetTTL(time.Minute * 5)
+	jwtStrategy := jwt.New(cache, keeper)
+	strategy = union.New(jwtStrategy)
 }
 
 // LoginHandler generates both access and refresh tokens
-func loginHandler(c *gin.Context) {
+func LoginHandler(c *gin.Context) {
 	var creds struct {
 		Name     string `json:"username"`
 		Password string `json:"password"`
@@ -177,6 +135,27 @@ func validUser(hashedPassword, password string) bool {
 	}
 }
 
+// Generate secure random JWT secrets for both access and refresh tokens
+func generateRandomJWTSecret() error {
+	// Generate a secret for the access token (JWT secret)
+	accessTokenSecret := make([]byte, 32) // 256 bits = 32 bytes
+	_, err := rand.Read(accessTokenSecret)
+	if err != nil {
+		return fmt.Errorf("failed to generate access token secret: %w", err)
+	}
+	jwtSecret = accessTokenSecret
+
+	// Generate a separate secret for the refresh token
+	refreshTokenSecret := make([]byte, 32) // 256 bits = 32 bytes
+	_, err = rand.Read(refreshTokenSecret)
+	if err != nil {
+		return fmt.Errorf("failed to generate refresh token secret: %w", err)
+	}
+	refreshSecret = refreshTokenSecret
+
+	return nil
+}
+
 // generateJWTToken creates a JWT token with the given expiration and secret
 func generateJWTToken(username string, expiration time.Duration, secret []byte) (string, error) {
 
@@ -194,7 +173,9 @@ func generateJWTToken(username string, expiration time.Duration, secret []byte) 
 	return tokenString, nil
 }
 
-func refreshHandler(c *gin.Context) {
+// REFRESH FUNCTIONS
+
+func RefreshHandler(c *gin.Context) {
 	// var refreshToken string
 	type RefreshRequest struct {
 		RefreshToken string `json:"refreshToken"`
@@ -263,64 +244,9 @@ func validateJWT(tokenString string, secret []byte) (dgjwt.MapClaims, error) {
 	return claims, nil
 }
 
-func setupGoGuardian() {
-	keeper = jwt.StaticSecret{
-		Secret:    jwtSecret,
-		Algorithm: jwt.HS256,
-	}
-	cache := libcache.FIFO.New(0)
-	cache.SetTTL(time.Minute * 5)
-	jwtStrategy := jwt.New(cache, keeper)
-	strategy = union.New(jwtStrategy)
-}
+// SIGNUP FUNCTIONS
 
-// Middleware for authenticating requests
-func middleware(next gin.HandlerFunc) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		log.Println("Executing Auth Middleware")
-		_, user, err := strategy.AuthenticateRequest(c.Request)
-		if err != nil {
-			c.JSON(401, gin.H{"error": "Unauthorized"})
-			c.Abort()
-			return
-		}
-		log.Printf("User %s Authenticated\n", user.GetUserName())
-		c.Set("user", user)
-		next(c)
-	}
-}
-
-func hashPassword(password string) string {
-	println("Pre Hash", password)
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 10)
-	if err == nil {
-		return string(bytes)
-	} else {
-		println("ERROR", err)
-		return "Error Hashing"
-	}
-}
-
-func init() {
-
-	var err error
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
-	db, err = sql.Open("postgres", psqlInfo)
-
-	if err != nil {
-		panic(err)
-	}
-	// defer db.Close()
-
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-}
-
-func signup(c *gin.Context) {
+func Signup(c *gin.Context) {
 
 	var creds struct {
 		Name     string `json:"username"`
@@ -352,24 +278,13 @@ func signup(c *gin.Context) {
 	}
 }
 
-func main() {
-	err := godotenv.Load()
-	if err != nil {
-		panic(err)
+func hashPassword(password string) string {
+	println("Pre Hash", password)
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+	if err == nil {
+		return string(bytes)
+	} else {
+		println("ERROR", err)
+		return "Error Hashing"
 	}
-	setupGoGuardian()
-	router := gin.Default()
-
-	router.Use(cors.Default())
-
-	router.POST("/v1/auth/login", loginHandler)
-	router.POST("/v1/auth/refresh", refreshHandler)
-	router.POST("v1/signup", signup)
-	router.GET("/v1/auth/token", middleware(createToken))
-
-	// Start and run the server
-	router.Run(":5000")
-
-	fmt.Println("Server is running on http://localhost:5000")
-	fmt.Println("Successfully connected!")
 }
