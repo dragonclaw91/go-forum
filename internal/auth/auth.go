@@ -2,7 +2,6 @@ package Myauth
 
 import (
 	"bytes"
-	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
 	"fmt"
@@ -194,27 +193,6 @@ func validUser(hashedPassword, password string) bool {
 		fmt.Println("Password match!")
 		return true
 	}
-}
-
-// Generate secure random JWT secrets for both access and refresh tokens
-func generateRandomJWTSecret() error {
-	// Generate a secret for the access token (JWT secret)
-	accessTokenSecret := make([]byte, 32) // 256 bits = 32 bytes
-	_, err := rand.Read(accessTokenSecret)
-	if err != nil {
-		return fmt.Errorf("failed to generate access token secret: %w", err)
-	}
-	jwtSecret = accessTokenSecret
-
-	// Generate a separate secret for the refresh token
-	refreshTokenSecret := make([]byte, 32) // 256 bits = 32 bytes
-	_, err = rand.Read(refreshTokenSecret)
-	if err != nil {
-		return fmt.Errorf("failed to generate refresh token secret: %w", err)
-	}
-	refreshSecret = refreshTokenSecret
-
-	return nil
 }
 
 // generateJWTToken creates a JWT token with the given expiration and secret
