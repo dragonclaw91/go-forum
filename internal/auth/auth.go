@@ -1,12 +1,15 @@
 package Myauth
 
 import (
+	"bytes"
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
 
 	"time"
 
@@ -25,8 +28,11 @@ import (
 )
 
 // Global variables
-var jwtSecret []byte     // Secret for access token
-var refreshSecret []byte // Secret for refresh token
+var jwtSecretString = os.Getenv("ACCESS_TOKEN_SECRET")
+var jwtSecret = []byte(jwtSecretString) // Secret for access token
+
+var refreshSecretString = os.Getenv("REFRESH_TOKEN_SECRET")
+var refreshSecret = []byte(refreshSecretString) // Secret for refresh token
 
 // var db *sql.DB
 
@@ -52,24 +58,31 @@ func Middleware(next gin.HandlerFunc) gin.HandlerFunc {
 
 		var requestData RequestData
 
+		// Read the request body into a buffer
+		body, err := io.ReadAll(c.Request.Body)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to read request body"})
+			c.Abort()
+			return
+		}
+
+		// Reassign the original request body to the new body (for further use)
+		c.Request.Body = io.NopCloser(bytes.NewReader(body))
+
+		// Store the body in context for later use
+		c.Set("rawBody", body)
+
 		// Parse JSON body into the requestData struct
 		if err := c.ShouldBindJSON(&requestData); err != nil {
 			// If there’s an error unmarshalling, respond with an error
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
 			return
 		}
-		// Print a specific field (e.g., access_token)
+		// Print  access_token
 		fmt.Println("Access TokenZ:", requestData.AccessToken)
 		println("IN THE MIDDLEWARE", c.DefaultPostForm("access_token", ""))
 
-		// You can proceed with unmarshalling as usual
-		// var jsonData map[string]interface{}
-		// if err := c.ShouldBindJSON(&jsonData); err != nil {
-		// 	println("ERROR???", err.Error())
-		// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
-		// 	return
-		// }
-		_, err := ValidateJWT(requestData.AccessToken, jwtSecret)
+		_, err = ValidateJWT(requestData.AccessToken, jwtSecret)
 		if err != nil {
 			println("ERROR", err)
 			c.JSON(401, gin.H{"error": "Unauthorized"})
@@ -77,16 +90,12 @@ func Middleware(next gin.HandlerFunc) gin.HandlerFunc {
 			return
 		}
 
-		// Store the entire *http.Request in the context
-		c.Set("request", c.Request)
-
 		log.Println("Executing Auth Middleware")
 		next(c)
 	}
 }
 
 func SetupGoGuardian() {
-	// fmt.Println("Hello,")
 	keeper = jwt.StaticSecret{
 		Secret:    jwtSecret,
 		Algorithm: jwt.HS256,
@@ -109,12 +118,11 @@ func LoginHandler(c *gin.Context, db *sql.DB) {
 	if err := c.ShouldBindJSON(&creds); err != nil {
 		// return this if we can't parse the data
 		c.JSON(400, gin.H{"error": "Invalid request"})
-		// return
+		return
 	}
 
 	name := creds.Name
 	password := creds.Password
-	println("FIRST LINE")
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -123,8 +131,7 @@ func LoginHandler(c *gin.Context, db *sql.DB) {
 	}()
 
 	rows, err := db.Query(`SELECT password FROM "users" WHERE name= $1`, name)
-	println("SECOND LINE")
-	// err := db.Query()
+
 	if err != nil {
 
 		println(err.Error())
@@ -145,10 +152,7 @@ func LoginHandler(c *gin.Context, db *sql.DB) {
 	if validUser(password, creds.Password) {
 		/*if vaild username and password  generate access and refresh tokens
 		handled by the generate JWTToken function */
-		// Generate secure random JWT secrets for both access and refresh tokens
-		if err := generateRandomJWTSecret(); err != nil {
-			log.Fatalf("Error generating JWT secret: %v", err)
-		}
+
 		accessToken, err := generateJWTToken(creds.Name, accessTokenExpiration, jwtSecret)
 		if err != nil {
 			// if we cant generate a access token return this
@@ -323,13 +327,6 @@ func Signup(c *gin.Context) {
 		}
 		c.JSON(http.StatusOK, data)
 	} else {
-		// _, err := db.Exec("INSERT INTO users (name, password) VALUES ($1, $2)", creds.Name, creds.Password)
-		// if err != nil {
-		// 	log.Fatal(err)
-		// 	c.JSON(500, gin.H{"error": "Failed to insert user"})
-		// 	return
-		// }
-
 		// Respond with success message or status
 		c.JSON(200, gin.H{"message": "User created successfully"})
 	}

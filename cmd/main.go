@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	Myauth "davidbrown/go/Go-Forum-App/internal/auth"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -31,21 +32,10 @@ import (
 // }
 
 // Global variables
-var jwtSecret []byte     // Secret for access token
-var refreshSecret []byte // Secret for refresh token
 
 var db *sql.DB
 var Rsecret string
 var Asecret string
-
-type Env struct {
-	db     *sql.DB
-	logger *log.Logger
-}
-
-// var tokenStrategy auth.Strategy
-
-// JWT expiration times
 
 const (
 	host     = "localhost"
@@ -55,32 +45,17 @@ const (
 	dbname   = "Forum"
 )
 
-// func createToken(c *gin.Context) {
-// 	println("CREATING TOKEN", c)
-// 	token := uuid.New().String()
-// 	user := auth.User(c.Request)
-// 	auth.Append(tokenStrategy, token, user)
-// 	body := fmt.Sprintf("token: %s \n", token)
-// 	c.String(http.StatusOK, body)
-// }
-
-// Middleware for authenticating requests
-//
-
+// dynamically bind the data to a struct
 func parser(c *gin.Context, data interface{}, message string) {
+	// context has already been consumed at this point so we get the raw body
+	rawBody, _ := c.Get("rawBody")
+	body := rawBody.([]byte)
 
-	req, exists := c.Get("request")
-	if !exists {
-		// Handle error if the request is not found in context
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Request not found in context"})
+	// bind the data
+	if err := json.Unmarshal(body, &data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": message})
 		return
 	}
-
-	if err := c.ShouldBindJSON(data); err != nil {
-		// return this if we can't parse the data
-		c.JSON(400, gin.H{"error": "Invalid request"})
-	}
-	c.JSON(400, gin.H{"Sucess": message})
 }
 
 func createSubPost(c *gin.Context) {
@@ -90,7 +65,7 @@ func createSubPost(c *gin.Context) {
 		Description string `json:"description"`
 	}
 
-	parser(c, &subPost, "Binded a subPost")
+	parser(c, &subPost, "Failed to Bind a subPost")
 
 	Name := subPost.Name
 	Description := subPost.Description
@@ -138,6 +113,8 @@ func main() {
 
 	router.POST("/v1/subpost/create", Myauth.Middleware(createSubPost))
 	router.POST("/v1/auth/login", func(c *gin.Context) {
+
+		c.Set("request", c.Request)
 		Myauth.LoginHandler(c, db)
 	})
 	// router.POST("/v1/auth/refresh", Myauth.RefreshHandler)
