@@ -46,6 +46,21 @@ const (
 	dbname   = "Forum"
 )
 
+type QueryParams struct {
+	Args     []interface{} // Parameters for the query (like where conditions)
+	ScanArgs []interface{} // Variables to hold the scanned result
+}
+
+type Topics struct {
+	ResultId    string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Creator_Id  string `json:"creator_id"`
+	CreatedAt   string `json:"created_at"`
+	Likes       string `json:"likes"`
+	PostCount   string `json:"post_count"`
+}
+
 // dynamically bind the data to a struct
 func parser(c *gin.Context, data interface{}, message string) {
 	// context has already been consumed at this point so we get the raw body
@@ -60,7 +75,7 @@ func parser(c *gin.Context, data interface{}, message string) {
 }
 
 func postHelper(c *gin.Context, message string, sql string, data ...interface{}) {
-
+	println("CALLING POST HELPER")
 	// println("CHECKING ID", Creator_Id)
 	_, err := db.Exec(sql, data...)
 	if err != nil {
@@ -71,6 +86,34 @@ func postHelper(c *gin.Context, message string, sql string, data ...interface{})
 	// Respond with success message or status
 	c.JSON(200, gin.H{"message": message + " created successfully"})
 
+}
+
+func getHelper(c *gin.Context, sql string, isSingleRow bool, params QueryParams,res) (*sql.Row, *sql.Rows) {
+switch{
+case res == "Topic":
+	var result Topics
+}
+	// var err error
+	// fmt.Print(args...)
+	println("CALLED", sql)
+	if isSingleRow {
+		// If querying for a single row, return *sql.Row
+		result := db.QueryRow(sql, params.Args...)
+		result.Scan(params.ScanArgs)
+		// fmt.Printf("Result: %+v\n", res)
+		c.JSON(http.StatusOK, result)
+		println("RESULT", result)
+		return result, nil
+	} else {
+		// If querying for multiple rows, return *sql.Rows
+		result, err := db.Query(sql, params.Args...)
+		if err != nil {
+			log.Fatal(err)
+		}
+		return nil, result
+	}
+
+	// return result
 }
 
 func createSubPost(c *gin.Context) {
@@ -88,6 +131,98 @@ func createSubPost(c *gin.Context) {
 	sql := "INSERT INTO subposts (name, description, creator_id) VALUES ($1, $2, $3)"
 
 	postHelper(c, "SubPost", sql, Name, Description, Creator_Id)
+
+}
+
+func getSubPost(c *gin.Context) {
+
+	sql := ""
+	orderby := "ORDER BY created_at DESC"
+	isSingleRow := false
+	var subPost struct {
+		Id      string `json:"id"`
+		Search  string `json:"search"`
+		OrderBy string `json:"order_by"`
+	}
+
+
+	var result Topics
+
+	// var results []Topics
+
+	parser(c, &subPost, "Failed to Bind a subPost")
+
+	Id := subPost.Id
+	Search := "%" + subPost.Search
+	OrderBy := subPost.OrderBy
+
+	//	rows, err := db.Query(`SELECT password FROM "users" WHERE name= $1`, name)
+
+	if OrderBy != "" {
+		switch {
+		case OrderBy == "likes":
+			orderby = `ORDER BY likes DESC`
+		case OrderBy == "posts":
+			orderby = `ORDER BY post_count DESC`
+		}
+	}
+
+	switch {
+	case Id != "":
+		isSingleRow = true
+		sql = `SELECT * FROM subposts WHERE id= $1 ` + orderby
+
+		params := QueryParams{
+			Args:     []interface{}{Id},                                                                                                        // SQL parameters (e.g., the ID)
+			ScanArgs: []interface{}{&result.ResultId, &result.Name, &result.Description, &result.Creator_Id, &result.CreatedAt, &result.Likes},
+		}
+		getHelper(c, sql, isSingleRow, params,"Topic")
+
+		// if err != nil {
+		// 	println("FATAL ERROR", err.Error())
+		// 	log.Fatal(err)
+		// }
+
+	case Search != "":
+		// sql = `SELECT s.name,s.created_at,s.likes, COUNT(p.sub_post_id) AS post_count
+		// 	FROM subposts s
+		// 	LEFT JOIN posts p ON p.sub_post_id = s.id
+		// 	WHERE s.name ILIKE $1
+		// 	GROUP BY s.id ` + orderby
+		// _, rows := getHelper(c, sql, isSingleRow, Search)
+
+		// for rows.Next() {
+		// 	var topic Topics
+		// 	if err := rows.Scan(&topic.Description, &topic.CreatedAt, &topic.Likes, &topic.PostCount); err != nil {
+		// 		log.Fatal(err)
+		// 		// http.Error(w, "Failed to scan row", http.StatusInternalServerError)
+		// 		return
+		// 	}
+		// 	results = append(results, topic)
+		// }
+		// c.JSON(http.StatusOK, results)
+
+		// fmt.Println("SEARCHING ON STRING")
+	default:
+		// sql = `SELECT s.name,s.created_at,s.likes, COUNT(p.sub_post_id) AS post_count
+		// 	FROM subposts s
+		// 	LEFT JOIN posts p ON p.sub_post_id = s.id
+		// 	GROUP BY s.id ` + orderby
+		// getHelper(c, sql, isSingleRow)
+		// _, rows := getHelper(c, sql, isSingleRow, Search)
+		// for rows.Next() {
+		// 	var topic Topics
+		// 	if err := rows.Scan(&topic.Description, &topic.CreatedAt, &topic.Likes, &topic.PostCount); err != nil {
+		// 		log.Fatal(err)
+		// 		// http.Error(w, "Failed to scan row", http.StatusInternalServerError)
+		// 		return
+		// 	}
+		// 	results = append(results, topic)
+		// }
+		// c.JSON(http.StatusOK, results)
+	}
+
+	// getHelper(c, sql, isSingleRow)
 
 }
 
@@ -116,7 +251,6 @@ func createPost(c *gin.Context) {
 }
 
 func createReply(c *gin.Context) {
-	log.Println("SHOULD BE HERE")
 	sql := "INSERT INTO replies (user_id, post_id, reply, parent_reply_id) VALUES ($1, $2, $3, $4)"
 
 	var Reply struct {
@@ -146,6 +280,28 @@ func createReply(c *gin.Context) {
 		// update the database
 		postHelper(c, "Reply", sql, User_Id, PostId, Replys)
 	}
+}
+
+func createVote(c *gin.Context) {
+	var Vote struct {
+		User_id  string `json:"user_id"`
+		PostId   string `json:"post_id"`
+		ReplyId  string `json:"reply_id"`
+		VoteType string `json:"vote_type"`
+	}
+	// bind the data to the struct
+	parser(c, &Vote, "Failed to Bind a post")
+
+	User_Id := Vote.User_id
+	PostId := Vote.PostId
+	RepyId := Vote.ReplyId
+	VoteType := Vote.VoteType
+
+	sql := "INSERT INTO votes (user_id, post_id, reply_id, vote_type) VALUES ($1, $2, $3, $4)"
+
+	// update the database
+	postHelper(c, "Vote", sql, User_Id, PostId, RepyId, VoteType)
+
 }
 
 func init() {
@@ -180,6 +336,10 @@ func main() {
 	router.POST("/v1/subpost/create", Myauth.Middleware(createSubPost))
 	router.POST("/v1/post/create", Myauth.Middleware(createPost))
 	router.POST("/v1/replies/create", Myauth.Middleware(createReply))
+	router.POST("/v1/vote/create", Myauth.Middleware(createVote))
+
+	router.GET("/v1/subpost", Myauth.Middleware(getSubPost))
+
 	router.POST("/v1/auth/login", func(c *gin.Context) {
 
 		c.Set("request", c.Request)
