@@ -37,6 +37,7 @@ type QueryParams struct {
 	ScanArgs []interface{} // Variables to hold the scanned result
 	Multi    []any
 	Single   any
+	Copy     any
 }
 
 // dynamically bind the data to a struct
@@ -88,21 +89,26 @@ func getHelper(c *gin.Context, sqlQuery string, isSingleRow bool, params QueryPa
 		// If querying for multiple rows
 		result, err := db.Query(sqlQuery, params.Args...)
 		params.Multi = []any{}
+
 		for result.Next() {
 
 			if err := result.Scan(params.ScanArgs...); err != nil {
 				log.Fatal(err)
 				return nil, nil, err
 			}
+			fmt.Println(result)
 
 			// Check if Single is a pointer and if it's a *Thing Passed in
 			if v.Kind() == reflect.Ptr {
 				// Dereference the pointer and check if it points to a struct of type Topics
 				if v.Elem().Kind() == reflect.Struct {
-
-					params.Multi = append(params.Multi, params.Single)
+					// Dynamically append a copy of the struct to params.Multi
+					// Make a copy of the struct (dereference the pointer and use reflect to make a copy)
+					copyOfStruct := v.Elem().Interface()
+					params.Multi = append(params.Multi, copyOfStruct)
 				}
 			}
+
 		}
 		c.JSON(http.StatusOK, params.Multi)
 		if err != nil {
@@ -197,6 +203,7 @@ func getSubPost(c *gin.Context) {
 		}
 
 	case Search != "":
+		params.Copy = topic
 		params.Single = &topic
 		params.Multi = []any{topics}
 		params.Args = []interface{}{Search}
@@ -212,6 +219,7 @@ func getSubPost(c *gin.Context) {
 			log.Fatal(err)
 		}
 	default:
+		params.Copy = topic
 		params.Single = &topic
 		params.Multi = []any{topics}
 		params.Args = []interface{}{Search}
