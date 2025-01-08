@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"reflect"
 	"strconv"
 
 	// "github.com/shaj13/libcache"
@@ -18,25 +19,9 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// const creditScoreMin = 500
-// const creditScoreMax = 900
-
-// type Task struct {
-// 	Id          string `json:"id"`
-// 	Task        string `json:"task"`
-// 	IsCompleted string `json:"iscompleted"`
-// }
-
-// type Result struct {
-// 	Value []Task
-// 	Err   error
-// }
-
 // Global variables
 
 var db *sql.DB
-var Rsecret string
-var Asecret string
 
 const (
 	host     = "localhost"
@@ -46,19 +31,12 @@ const (
 	dbname   = "Forum"
 )
 
+// GLOBAL VARAIBLES
 type QueryParams struct {
 	Args     []interface{} // Parameters for the query (like where conditions)
 	ScanArgs []interface{} // Variables to hold the scanned result
-}
-
-type Topics struct {
-	ResultId    string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Creator_Id  string `json:"creator_id"`
-	CreatedAt   string `json:"created_at"`
-	Likes       string `json:"likes"`
-	PostCount   string `json:"post_count"`
+	Multi    []any
+	Single   any
 }
 
 // dynamically bind the data to a struct
@@ -75,8 +53,7 @@ func parser(c *gin.Context, data interface{}, message string) {
 }
 
 func postHelper(c *gin.Context, message string, sql string, data ...interface{}) {
-	println("CALLING POST HELPER")
-	// println("CHECKING ID", Creator_Id)
+
 	_, err := db.Exec(sql, data...)
 	if err != nil {
 		log.Fatal(err)
@@ -88,29 +65,50 @@ func postHelper(c *gin.Context, message string, sql string, data ...interface{})
 
 }
 
-func getHelper(c *gin.Context, sql string, isSingleRow bool, params QueryParams,res) (*sql.Row, *sql.Rows) {
-switch{
-case res == "Topic":
-	var result Topics
-}
-	// var err error
-	// fmt.Print(args...)
-	println("CALLED", sql)
+func getHelper(c *gin.Context, sqlQuery string, isSingleRow bool, params QueryParams) (*sql.Row, *sql.Rows, error) {
+	// Use reflection to check the type of Single
+	v := reflect.ValueOf(params.Single)
+
 	if isSingleRow {
-		// If querying for a single row, return *sql.Row
-		result := db.QueryRow(sql, params.Args...)
-		result.Scan(params.ScanArgs)
-		// fmt.Printf("Result: %+v\n", res)
-		c.JSON(http.StatusOK, result)
-		println("RESULT", result)
-		return result, nil
+		// If querying for a single row
+		result := db.QueryRow(sqlQuery, params.Args...)
+
+		err := result.Scan(params.ScanArgs...)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				fmt.Println("No rows found")
+				return nil, nil, fmt.Errorf("no topic found with ID %s", params.Args...)
+			}
+			fmt.Println("Error scanning row:", err)
+			return nil, nil, err
+		}
+
+		return result, nil, nil
 	} else {
-		// If querying for multiple rows, return *sql.Rows
-		result, err := db.Query(sql, params.Args...)
+		// If querying for multiple rows
+		result, err := db.Query(sqlQuery, params.Args...)
+		params.Multi = []any{}
+		for result.Next() {
+
+			if err := result.Scan(params.ScanArgs...); err != nil {
+				log.Fatal(err)
+				return nil, nil, err
+			}
+
+			// Check if Single is a pointer and if it's a *Thing Passed in
+			if v.Kind() == reflect.Ptr {
+				// Dereference the pointer and check if it points to a struct of type Topics
+				if v.Elem().Kind() == reflect.Struct {
+
+					params.Multi = append(params.Multi, params.Single)
+				}
+			}
+		}
+		c.JSON(http.StatusOK, params.Multi)
 		if err != nil {
 			log.Fatal(err)
 		}
-		return nil, result
+		return nil, result, nil
 	}
 
 	// return result
@@ -136,6 +134,18 @@ func createSubPost(c *gin.Context) {
 
 func getSubPost(c *gin.Context) {
 
+	type Topics struct {
+		ResultId    string `json:"id"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		Creator_Id  string `json:"creator_id"`
+		CreatedAt   string `json:"created_at"`
+		Likes       string `json:"likes"`
+		PostCount   string `json:"post_count"`
+	}
+	var topic Topics
+	var topics []Topics
+
 	sql := ""
 	orderby := "ORDER BY created_at DESC"
 	isSingleRow := false
@@ -145,18 +155,22 @@ func getSubPost(c *gin.Context) {
 		OrderBy string `json:"order_by"`
 	}
 
-
-	var result Topics
-
-	// var results []Topics
-
 	parser(c, &subPost, "Failed to Bind a subPost")
 
 	Id := subPost.Id
 	Search := "%" + subPost.Search
 	OrderBy := subPost.OrderBy
 
-	//	rows, err := db.Query(`SELECT password FROM "users" WHERE name= $1`, name)
+	params := QueryParams{
+		Args: []interface{}{Id}, // SQL parameters (e.g., the ID)
+		ScanArgs: []interface{}{
+			&topic.ResultId,
+			&topic.Name,
+			&topic.Description,
+			&topic.Creator_Id,
+			&topic.CreatedAt,
+			&topic.Likes},
+	}
 
 	if OrderBy != "" {
 		switch {
@@ -172,58 +186,42 @@ func getSubPost(c *gin.Context) {
 		isSingleRow = true
 		sql = `SELECT * FROM subposts WHERE id= $1 ` + orderby
 
-		params := QueryParams{
-			Args:     []interface{}{Id},                                                                                                        // SQL parameters (e.g., the ID)
-			ScanArgs: []interface{}{&result.ResultId, &result.Name, &result.Description, &result.Creator_Id, &result.CreatedAt, &result.Likes},
+		_, _, err := getHelper(c, sql, isSingleRow, params)
+		if err == nil {
+			c.JSON(http.StatusOK, topic)
 		}
-		getHelper(c, sql, isSingleRow, params,"Topic")
 
-		// if err != nil {
-		// 	println("FATAL ERROR", err.Error())
-		// 	log.Fatal(err)
-		// }
+		if err != nil {
+			println("FATAL ERROR", err.Error())
+			log.Fatal(err)
+		}
 
 	case Search != "":
-		// sql = `SELECT s.name,s.created_at,s.likes, COUNT(p.sub_post_id) AS post_count
-		// 	FROM subposts s
-		// 	LEFT JOIN posts p ON p.sub_post_id = s.id
-		// 	WHERE s.name ILIKE $1
-		// 	GROUP BY s.id ` + orderby
-		// _, rows := getHelper(c, sql, isSingleRow, Search)
-
-		// for rows.Next() {
-		// 	var topic Topics
-		// 	if err := rows.Scan(&topic.Description, &topic.CreatedAt, &topic.Likes, &topic.PostCount); err != nil {
-		// 		log.Fatal(err)
-		// 		// http.Error(w, "Failed to scan row", http.StatusInternalServerError)
-		// 		return
-		// 	}
-		// 	results = append(results, topic)
-		// }
-		// c.JSON(http.StatusOK, results)
-
-		// fmt.Println("SEARCHING ON STRING")
+		params.Single = &topic
+		params.Multi = []any{topics}
+		params.Args = []interface{}{Search}
+		params.ScanArgs = []interface{}{&topic.Description, &topic.CreatedAt, &topic.Likes, &topic.PostCount}
+		sql = `SELECT s.name,s.created_at,s.likes, COUNT(p.sub_post_id) AS post_count
+			FROM subposts s
+			LEFT JOIN posts p ON p.sub_post_id = s.id
+			WHERE s.name ILIKE $1
+			GROUP BY s.id ` + orderby
+		_, _, err := getHelper(c, sql, isSingleRow, params)
+		if err != nil {
+			println("FATAL ERROR", err.Error())
+			log.Fatal(err)
+		}
 	default:
-		// sql = `SELECT s.name,s.created_at,s.likes, COUNT(p.sub_post_id) AS post_count
-		// 	FROM subposts s
-		// 	LEFT JOIN posts p ON p.sub_post_id = s.id
-		// 	GROUP BY s.id ` + orderby
-		// getHelper(c, sql, isSingleRow)
-		// _, rows := getHelper(c, sql, isSingleRow, Search)
-		// for rows.Next() {
-		// 	var topic Topics
-		// 	if err := rows.Scan(&topic.Description, &topic.CreatedAt, &topic.Likes, &topic.PostCount); err != nil {
-		// 		log.Fatal(err)
-		// 		// http.Error(w, "Failed to scan row", http.StatusInternalServerError)
-		// 		return
-		// 	}
-		// 	results = append(results, topic)
-		// }
-		// c.JSON(http.StatusOK, results)
+		params.Single = &topic
+		params.Multi = []any{topics}
+		params.Args = []interface{}{Search}
+		params.ScanArgs = []interface{}{&topic.Description, &topic.CreatedAt, &topic.Likes, &topic.PostCount}
+		sql = `SELECT s.name,s.created_at,s.likes, COUNT(p.sub_post_id) AS post_count
+			FROM subposts s
+			LEFT JOIN posts p ON p.sub_post_id = s.id
+			GROUP BY s.id ` + orderby
+		getHelper(c, sql, isSingleRow, params)
 	}
-
-	// getHelper(c, sql, isSingleRow)
-
 }
 
 func createPost(c *gin.Context) {
@@ -324,8 +322,6 @@ func init() {
 }
 
 func main() {
-
-	// env := &Env{db: db}
 
 	Myauth.SetupGoGuardian()
 
