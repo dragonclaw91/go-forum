@@ -68,12 +68,13 @@ func postHelper(c *gin.Context, message string, sql string, data ...interface{})
 
 func getHelper(c *gin.Context, sqlQuery string, isSingleRow bool, params QueryParams) (*sql.Row, *sql.Rows, error) {
 	// Use reflection to check the type of Single
+
 	v := reflect.ValueOf(params.Single)
 
 	if isSingleRow {
 		// If querying for a single row
 		result := db.QueryRow(sqlQuery, params.Args...)
-
+		println("IN THE HELPER")
 		err := result.Scan(params.ScanArgs...)
 		if err != nil {
 			if err == sql.ErrNoRows {
@@ -163,6 +164,7 @@ func getSubPost(c *gin.Context) {
 
 	parser(c, &subPost, "Failed to Bind a subPost")
 
+	// links back to subPost not topics
 	Id := subPost.Id
 	Search := "%" + subPost.Search
 	OrderBy := subPost.OrderBy
@@ -232,30 +234,6 @@ func getSubPost(c *gin.Context) {
 	}
 }
 
-func createPost(c *gin.Context) {
-	var Post struct {
-		User_id     string `json:"user_id"`
-		SubPostId   string `json:"sub_post_id"`
-		Title       string `json:"title"`
-		Description string `json:"description"`
-		PostType    string `json:"post_type"`
-	}
-	// bind the data to the struct
-	parser(c, &Post, "Failed to Bind a post")
-
-	User_Id := Post.User_id
-	SubPostId := Post.SubPostId
-	Title := Post.Title
-	Description := Post.Description
-	PostType := Post.PostType
-
-	sql := "INSERT INTO posts (user_id, sub_post_id, title,  description, post_type) VALUES ($1, $2, $3, $4, $5)"
-
-	// update the database
-	postHelper(c, "Post", sql, User_Id, SubPostId, Description, Title, PostType)
-
-}
-
 func createReply(c *gin.Context) {
 	sql := "INSERT INTO replies (user_id, post_id, reply, parent_reply_id) VALUES ($1, $2, $3, $4)"
 
@@ -285,6 +263,104 @@ func createReply(c *gin.Context) {
 		sql := "INSERT INTO replies (user_id, post_id, reply) VALUES ($1, $2, $3)"
 		// update the database
 		postHelper(c, "Reply", sql, User_Id, PostId, Replys)
+	}
+}
+
+func getReplies(c *gin.Context) {
+
+	type Replies struct {
+		ResultId      string  `json:"id"`
+		ParentReplyId *string `json:"parent_reply_id,omitempty"`
+		Reply         string  `json:"reply"`
+		CreatedAt     string  `json:"created_at"`
+		Score         string  `json:"score"`
+	}
+	var reply Replies
+	var replies []Replies
+
+	sql := ""
+	orderby := "ORDER BY c.id"
+	isSingleRow := false
+	var replyArgs struct {
+		SubPostId string `json:"id"`
+		Search    string `json:"search"`
+		OrderBy   string `json:"order_by"`
+	}
+	println("PROBABLY MADE IT HERE")
+	parser(c, &replyArgs, "Failed to Bind a Reply")
+
+	Id := replyArgs.SubPostId
+	Search := "%" + replyArgs.Search
+	OrderBy := replyArgs.OrderBy
+
+	params := QueryParams{
+		Args: []interface{}{Id}, // SQL parameters (e.g., the ID)
+		ScanArgs: []interface{}{
+			&reply.ResultId,
+			&reply.ParentReplyId,
+			&reply.Reply,
+			&reply.CreatedAt,
+			&reply.Score},
+	}
+
+	// TODO: Votes will be part of the equasion add them to the order by
+
+	if OrderBy != "" {
+		switch {
+		case OrderBy == "likes":
+			orderby = `ORDER BY likes DESC`
+		case OrderBy == "posts":
+			orderby = `ORDER BY post_count DESC`
+		}
+	}
+
+	switch {
+	case Id != "":
+		params.Single = &reply
+		params.Multi = []any{replies}
+		params.Args = []interface{}{Id}
+		sql = `SELECT c.id, parent_reply_id,  reply, c.created_at, 
+		COALESCE(SUM(CASE WHEN vote_type = 'upvote' THEN 1 ELSE 0 END), 0) - 
+		COALESCE(SUM(CASE WHEN vote_type = 'downvote' THEN 1 ELSE 0 END), 0) AS score
+ 		FROM replies c
+ 		LEFT JOIN votes v ON c.id = v.reply_id
+ 		WHERE c.parent_reply_id IS NULL AND c.subpost_id = $1
+ 		GROUP BY c.id ` + orderby
+
+		_, _, err := getHelper(c, sql, isSingleRow, params)
+
+		if err != nil {
+			println("FATAL ERROR", err.Error())
+			log.Fatal(err)
+		}
+
+	case Search != "":
+		params.Copy = reply
+		params.Single = &reply
+		params.Multi = []any{replies}
+		params.Args = []interface{}{Search}
+		params.ScanArgs = []interface{}{&reply.ParentReplyId, &reply.Reply, &reply.CreatedAt, &reply.Score}
+		sql = `SELECT s.name,s.created_at,s.likes, COUNT(p.sub_post_id) AS post_count
+			FROM subposts s
+			LEFT JOIN posts p ON p.sub_post_id = s.id
+			WHERE s.name ILIKE $1
+			GROUP BY s.id ` + orderby
+		_, _, err := getHelper(c, sql, isSingleRow, params)
+		if err != nil {
+			println("FATAL ERROR", err.Error())
+			log.Fatal(err)
+		}
+	default:
+		params.Copy = reply
+		params.Single = &reply
+		params.Multi = []any{replies}
+		params.Args = []interface{}{Search}
+		params.ScanArgs = []interface{}{&reply.ParentReplyId, &reply.Reply, &reply.CreatedAt}
+		sql = `SELECT s.name,s.created_at,s.likes, COUNT(p.sub_post_id) AS post_count
+			FROM subposts s
+			LEFT JOIN posts p ON p.sub_post_id = s.id
+			GROUP BY s.id ` + orderby
+		getHelper(c, sql, isSingleRow, params)
 	}
 }
 
@@ -338,11 +414,11 @@ func main() {
 	router.Use(cors.Default())
 
 	router.POST("/v1/subpost/create", Myauth.Middleware(createSubPost))
-	router.POST("/v1/post/create", Myauth.Middleware(createPost))
 	router.POST("/v1/replies/create", Myauth.Middleware(createReply))
 	router.POST("/v1/vote/create", Myauth.Middleware(createVote))
 
 	router.GET("/v1/subpost", Myauth.Middleware(getSubPost))
+	router.GET("/v1/replies/top", Myauth.Middleware(getReplies))
 
 	router.POST("/v1/auth/login", func(c *gin.Context) {
 
