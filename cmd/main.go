@@ -57,6 +57,7 @@ func postHelper(c *gin.Context, message string, sql string, data ...interface{})
 
 	_, err := db.Exec(sql, data...)
 	if err != nil {
+		println("MADE IT")
 		log.Fatal(err)
 		c.JSON(500, gin.H{"error": "Failed to insert " + message})
 		return
@@ -143,6 +144,49 @@ func createSubPost(c *gin.Context) {
 	sql := "INSERT INTO subposts (name, description, creator_id) VALUES ($1, $2, $3)"
 
 	postHelper(c, "SubPost", sql, Name, Description, Creator_Id)
+
+}
+
+func putSubPost(c *gin.Context) {
+	// place to store the elements of key value pairs of things we want to update
+	type Field struct {
+		Key   string `json:"key"`
+		Value string `json:"value"`
+	}
+	// storing an array of things we want to update plus its id
+	type subPost struct {
+		Id     string  `json:"id"`
+		Fields []Field `json:"fields"`
+	}
+
+	var subpost subPost
+	var values []any
+
+	// binding all data to a supost type
+	parser(c, &subpost, "Failed to Bind a subPost")
+
+	// this should never change so we hard code it
+	sql := "UPDATE subposts SET "
+
+	// Iterate over the subpost to parse it to build th final sql string and the new values of things we want to change
+	for i := 0; i < len(subpost.Fields); i++ {
+		// append the name of the field we want to update plus a placeholder for postgres
+		sql = sql + subpost.Fields[i].Key + " = $" + strconv.Itoa(i+1)
+		// if we are not at the end of our loop add a comma to prepare for the next field
+		if i+1 != len(subpost.Fields) {
+			sql = sql + ", "
+			// if we are at the end of our loop add the where clause and a final placeholder
+		} else {
+			sql = sql + " WHERE Id = $" + strconv.Itoa(i+2)
+		}
+		// shoveing the new values we want to use to update to later be passed as args
+		values = append(values, subpost.Fields[i].Value)
+	}
+	// finnaly we add the id of the thing we want to update
+	values = append(values, subpost.Id)
+	fmt.Println(values...)
+	// update the database
+	postHelper(c, "SubPost", sql, values...)
 
 }
 
@@ -350,7 +394,6 @@ func getReplies(c *gin.Context) {
 		params.Single = &reply
 		params.Multi = []any{replies}
 		params.Args = []interface{}{Id, Search}
-		// params.ScanArgs = []interface{}{&reply.ParentReplyId, &reply.Reply, &reply.CreatedAt, &reply.Score}
 		sql = `SELECT 
 		c.id, parent_reply_id, reply, c.created_at, u.name,
 			COALESCE(SUM(CASE WHEN v.vote_type = 'upvote' THEN 1 ELSE 0 END), 0) - 
@@ -440,7 +483,9 @@ func main() {
 	router.POST("/v1/vote/create", Myauth.Middleware(createVote))
 
 	router.GET("/v1/subpost", Myauth.Middleware(getSubPost))
-	router.GET("/v1/replies/top", Myauth.Middleware(getReplies))
+	router.GET("/v1/replies", Myauth.Middleware(getReplies))
+
+	router.PUT("/v1/subpost/update", Myauth.Middleware(putSubPost))
 
 	router.POST("/v1/auth/login", func(c *gin.Context) {
 
