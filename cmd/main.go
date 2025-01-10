@@ -451,6 +451,24 @@ func createVote(c *gin.Context) {
 
 }
 
+func putReply(c *gin.Context) {
+	// place to store the new reply
+	var Reply struct {
+		Id    string `json:"id"`
+		Reply string `json:"reply"`
+	}
+
+	// binding all data to a supost type
+	parser(c, &Reply, "Failed to Bind a reply")
+
+	// this should never change so we hard code it
+	sql := "UPDATE replies SET reply = $1 WHERE id = $2 "
+
+	// update the database
+	postHelper(c, "Vote", sql, Reply.Reply, Reply.Id)
+
+}
+
 func init() {
 
 	var err error
@@ -486,6 +504,7 @@ func main() {
 	router.GET("/v1/replies", Myauth.Middleware(getReplies))
 
 	router.PUT("/v1/subpost/update", Myauth.Middleware(putSubPost))
+	router.PUT("/v1/replies/update", Myauth.Middleware(putReply))
 
 	router.POST("/v1/auth/login", func(c *gin.Context) {
 
