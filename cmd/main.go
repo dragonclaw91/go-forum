@@ -74,7 +74,7 @@ func getHelper(c *gin.Context, sqlQuery string, isSingleRow bool, params QueryPa
 	if isSingleRow {
 		// If querying for a single row
 		result := db.QueryRow(sqlQuery, params.Args...)
-		println("IN THE HELPER")
+
 		err := result.Scan(params.ScanArgs...)
 		if err != nil {
 			if err == sql.ErrNoRows {
@@ -89,12 +89,18 @@ func getHelper(c *gin.Context, sqlQuery string, isSingleRow bool, params QueryPa
 	} else {
 		// If querying for multiple rows
 		result, err := db.Query(sqlQuery, params.Args...)
+		if err != nil {
+			println("ERROR", err.Error(), result)
+		}
+
+		// fmt.Println(result)
 		params.Multi = []any{}
 
 		for result.Next() {
 
 			if err := result.Scan(params.ScanArgs...); err != nil {
 				log.Fatal(err)
+				println(err.Error())
 				return nil, nil, err
 			}
 			fmt.Println(result)
@@ -113,6 +119,7 @@ func getHelper(c *gin.Context, sqlQuery string, isSingleRow bool, params QueryPa
 		}
 		c.JSON(http.StatusOK, params.Multi)
 		if err != nil {
+			println(err.Error())
 			log.Fatal(err)
 		}
 		return nil, result, nil
@@ -273,23 +280,26 @@ func getReplies(c *gin.Context) {
 		ParentReplyId *string `json:"parent_reply_id,omitempty"`
 		Reply         string  `json:"reply"`
 		CreatedAt     string  `json:"created_at"`
+		UserId        string  `json:"name"`
 		Score         string  `json:"score"`
 	}
 	var reply Replies
 	var replies []Replies
 
 	sql := ""
-	orderby := "ORDER BY c.id"
+	orderby := "ORDER BY c.created_at"
 	isSingleRow := false
 	var replyArgs struct {
-		SubPostId string `json:"id"`
-		Search    string `json:"search"`
-		OrderBy   string `json:"order_by"`
+		Id      string `json:"id"`
+		Search  string `json:"search"`
+		OrderBy string `json:"order_by"`
+		ReplyId string `json:"reply_id"`
 	}
 	println("PROBABLY MADE IT HERE")
 	parser(c, &replyArgs, "Failed to Bind a Reply")
 
-	Id := replyArgs.SubPostId
+	ReplyId := replyArgs.ReplyId
+	Id := replyArgs.Id
 	Search := "%" + replyArgs.Search
 	OrderBy := replyArgs.OrderBy
 
@@ -300,22 +310,62 @@ func getReplies(c *gin.Context) {
 			&reply.ParentReplyId,
 			&reply.Reply,
 			&reply.CreatedAt,
-			&reply.Score},
+			&reply.UserId,
+			&reply.Score,
+		},
 	}
-
-	// TODO: Votes will be part of the equasion add them to the order by
 
 	if OrderBy != "" {
 		switch {
-		case OrderBy == "likes":
-			orderby = `ORDER BY likes DESC`
-		case OrderBy == "posts":
-			orderby = `ORDER BY post_count DESC`
+
+		case OrderBy == "score":
+			orderby = `ORDER BY score DESC`
 		}
 	}
 
 	switch {
-	case Id != "":
+	case ReplyId != "":
+		params.Single = &reply
+		params.Multi = []any{replies}
+		params.Args = []interface{}{Id, ReplyId}
+		sql = `SELECT 
+		c.id, parent_reply_id, reply, c.created_at, u.name,
+			COALESCE(SUM(CASE WHEN v.vote_type = 'upvote' THEN 1 ELSE 0 END), 0) - 
+			COALESCE(SUM(CASE WHEN v.vote_type = 'downvote' THEN 1 ELSE 0 END), 0) AS score
+		FROM replies c
+		JOIN users u ON c.user_id = u.user_id
+		LEFT JOIN votes v ON c.id = v.reply_id
+		WHERE c.parent_reply_id = $2 AND c.subpost_id = $1
+		GROUP BY c.id, u.name ` + orderby
+
+		_, _, err := getHelper(c, sql, isSingleRow, params)
+
+		if err != nil {
+			println("FATAL ERROR", err.Error())
+			log.Fatal(err)
+		}
+
+	case Search != "":
+		params.Copy = reply
+		params.Single = &reply
+		params.Multi = []any{replies}
+		params.Args = []interface{}{Id, Search}
+		// params.ScanArgs = []interface{}{&reply.ParentReplyId, &reply.Reply, &reply.CreatedAt, &reply.Score}
+		sql = `SELECT 
+		c.id, parent_reply_id, reply, c.created_at, u.name,
+			COALESCE(SUM(CASE WHEN v.vote_type = 'upvote' THEN 1 ELSE 0 END), 0) - 
+			COALESCE(SUM(CASE WHEN v.vote_type = 'downvote' THEN 1 ELSE 0 END), 0) AS score
+		FROM replies c
+		JOIN users u ON c.user_id = u.user_id
+		LEFT JOIN votes v ON c.id = v.reply_id
+		WHERE c.parent_reply_id IS NULL AND c.subpost_id = $1 AND reply ILIKE $2
+		GROUP BY c.id, u.name ` + orderby
+		_, _, err := getHelper(c, sql, isSingleRow, params)
+		if err != nil {
+			println("FATAL ERROR", err.Error())
+			log.Fatal(err)
+		}
+	default:
 		params.Single = &reply
 		params.Multi = []any{replies}
 		params.Args = []interface{}{Id}
@@ -333,34 +383,6 @@ func getReplies(c *gin.Context) {
 			println("FATAL ERROR", err.Error())
 			log.Fatal(err)
 		}
-
-	case Search != "":
-		params.Copy = reply
-		params.Single = &reply
-		params.Multi = []any{replies}
-		params.Args = []interface{}{Search}
-		params.ScanArgs = []interface{}{&reply.ParentReplyId, &reply.Reply, &reply.CreatedAt, &reply.Score}
-		sql = `SELECT s.name,s.created_at,s.likes, COUNT(p.sub_post_id) AS post_count
-			FROM subposts s
-			LEFT JOIN posts p ON p.sub_post_id = s.id
-			WHERE s.name ILIKE $1
-			GROUP BY s.id ` + orderby
-		_, _, err := getHelper(c, sql, isSingleRow, params)
-		if err != nil {
-			println("FATAL ERROR", err.Error())
-			log.Fatal(err)
-		}
-	default:
-		params.Copy = reply
-		params.Single = &reply
-		params.Multi = []any{replies}
-		params.Args = []interface{}{Search}
-		params.ScanArgs = []interface{}{&reply.ParentReplyId, &reply.Reply, &reply.CreatedAt}
-		sql = `SELECT s.name,s.created_at,s.likes, COUNT(p.sub_post_id) AS post_count
-			FROM subposts s
-			LEFT JOIN posts p ON p.sub_post_id = s.id
-			GROUP BY s.id ` + orderby
-		getHelper(c, sql, isSingleRow, params)
 	}
 }
 
