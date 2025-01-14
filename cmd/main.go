@@ -15,6 +15,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/guregu/null/v5"
 
 	_ "github.com/lib/pq"
 )
@@ -456,18 +457,28 @@ func createVote(c *gin.Context) {
 func putReply(c *gin.Context) {
 	// place to store the new reply
 	var Reply struct {
-		Id    string `json:"id"`
-		Reply string `json:"reply"`
+		Id      string `json:"id"`
+		Reply   string `json:"reply"`
+		Flagged bool   `json:"flagged"`
 	}
 
 	// binding all data to a supost type
 	parser(c, &Reply, "Failed to Bind a reply")
 
-	// this should never change so we hard code it
 	sql := "UPDATE replies SET reply = $1 WHERE id = $2 "
+	switch {
+	case Reply.Flagged:
+		sql = `UPDATE replies
+		SET flagged = NOT flagged
+		WHERE id = $1;`
+		postHelper(c, "Reply", sql, Reply.Id)
+
+	default:
+		sql = "UPDATE replies SET reply = $1 WHERE id = $2 "
+		postHelper(c, "Reply", sql, Reply.Reply, Reply.Id)
+	}
 
 	// update the database
-	postHelper(c, "Vote", sql, Reply.Reply, Reply.Id)
 
 }
 
@@ -487,6 +498,38 @@ func DeleteHelper(c *gin.Context) {
 	// update the database
 	postHelper(c, Delete.DeleteFrom+" delete", sql, Delete.Id)
 
+}
+
+func putHelper(c *gin.Context) {
+	var Update struct {
+		Id      string `json:"id"`
+		Change  string `json:"change"`
+		NewRole string `json:"new_role"`
+		Picture string `json:"picture"`
+	}
+
+	// binding all data to a supost type
+	parser(c, &Update, "Failed to Bind a subpost")
+
+	// this should never change so we hard code it
+	sql := ""
+
+	switch {
+
+	case Update.Change == "new_admin" || Update.Change == "new_moderator":
+		sql = `UPDATE users SET pending = false `
+		sql = sql + ` , ` + Update.NewRole + ` = true  WHERE user_id = $1;`
+		println("SQL", sql, Update.Id)
+		postHelper(c, "updated user", sql, Update.Id)
+
+	case Update.Change == "picture":
+		sql = `UPDATE users SET picture = $2 WHERE user_id = $1`
+		if Update.Picture == "none" {
+			postHelper(c, "updated user", sql, Update.Id, null.IntFromPtr(nil))
+		} else {
+			postHelper(c, "updated user", sql, Update.Id, Update.Picture)
+		}
+	}
 }
 
 func init() {
@@ -533,6 +576,7 @@ func main() {
 
 	router.PUT("/v1/subpost/update", Myauth.Middleware(putSubPost))
 	router.PUT("/v1/replies/update", Myauth.Middleware(putReply))
+	router.PUT("/v1/user/update", Myauth.Middleware(putHelper))
 
 	router.DELETE("/v1/delete", Myauth.Middleware(DeleteHelper))
 
