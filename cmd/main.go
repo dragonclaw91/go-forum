@@ -55,7 +55,7 @@ func parser(c *gin.Context, data interface{}, message string) {
 
 func postHelper(c *gin.Context, message string, sql string, data ...interface{}) {
 
-	_, err := db.Exec(sql, data...)
+	result, err := db.Exec(sql, data...)
 	if err != nil {
 		println("MADE IT")
 		log.Fatal(err)
@@ -64,6 +64,8 @@ func postHelper(c *gin.Context, message string, sql string, data ...interface{})
 	}
 	// Respond with success message or status
 	c.JSON(200, gin.H{"message": message + " created successfully"})
+
+	c.Set("deleteResult", result)
 
 }
 
@@ -469,6 +471,24 @@ func putReply(c *gin.Context) {
 
 }
 
+func DeleteHelper(c *gin.Context) {
+	// place to store the new reply
+	var Delete struct {
+		Id         string `json:"id"`
+		DeleteFrom string `json:"delete_from"`
+	}
+
+	// binding all data to a supost type
+	parser(c, &Delete, "Failed to Bind a subpost")
+
+	// this should never change so we hard code it
+	sql := "DELETE FROM " + Delete.DeleteFrom + " WHERE id = $1"
+	println(sql)
+	// update the database
+	postHelper(c, Delete.DeleteFrom+" delete", sql, Delete.Id)
+
+}
+
 func init() {
 
 	var err error
@@ -499,6 +519,14 @@ func main() {
 	router.POST("/v1/subpost/create", Myauth.Middleware(createSubPost))
 	router.POST("/v1/replies/create", Myauth.Middleware(createReply))
 	router.POST("/v1/vote/create", Myauth.Middleware(createVote))
+	router.POST("/v1/auth/login", func(c *gin.Context) {
+
+		c.Set("request", c.Request)
+		Myauth.LoginHandler(c, db)
+
+	})
+	router.POST("/v1/auth/refresh", Myauth.RefreshHandler)
+	router.POST("v1/signup", Myauth.Signup)
 
 	router.GET("/v1/subpost", Myauth.Middleware(getSubPost))
 	router.GET("/v1/replies", Myauth.Middleware(getReplies))
@@ -506,13 +534,7 @@ func main() {
 	router.PUT("/v1/subpost/update", Myauth.Middleware(putSubPost))
 	router.PUT("/v1/replies/update", Myauth.Middleware(putReply))
 
-	router.POST("/v1/auth/login", func(c *gin.Context) {
-
-		c.Set("request", c.Request)
-		Myauth.LoginHandler(c, db)
-	})
-	router.POST("/v1/auth/refresh", Myauth.RefreshHandler)
-	router.POST("v1/signup", Myauth.Signup)
+	router.DELETE("/v1/delete", Myauth.Middleware(DeleteHelper))
 
 	// router.GET("/v1/auth/token", middleware(createToken))
 
