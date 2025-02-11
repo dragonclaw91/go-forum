@@ -1,0 +1,60 @@
+<div class="page  test">
+    <h1 class="header center">Welcome to the App</h1>
+    <div class=" row h-100 center ">
+        <div class="col-md-6  ">
+            <div class="card">
+                @if(!isVisible){
+                <div class="card-body row ">
+                    <h1 class="card-title bottom text-center w-100">Login</h1>
+
+                    <div class="form-group  bottom "> <!-- Add margin-bottom for spacing -->
+                        <input [(ngModel)]="email"  type="text" class="form-control" id="input1" placeholder="Username">
+                    </div>
+                    <div class="form-group  w-100 "> <!-- Add margin-bottom for spacing -->
+                        <input type="text" class="form-control" id="input2" placeholder="Password">
+                    </div>
+
+                    <div class="col-5 left">
+                        <div class="row center ">
+                            <button (click)="onSignIn()" class="btn btn-color ">Login</button>
+                        </div>
+
+
+                    </div>
+                    <div class="col"></div>
+                    <div class="col-5 right">
+
+
+                        <div class="row center ">
+                            <button (click)="toggleVisibility()" class="btn btn-color ">Signup</button>
+
+                        </div>
+                    </div>
+
+                </div>
+            }@else {
+                <div class="card-body row ">
+                    <h1 class="card-title bottom text-center w-100">Login</h1>
+                    <div class="form-group  bottom "> <!-- Add margin-bottom for spacing -->
+                        <input type="text" class="form-control" id="input1" placeholder="Email">
+                    </div>
+                    <div class="form-group  w-100 "> <!-- Add margin-bottom for spacing -->
+                        <input type="text" class="form-control" id="input2" placeholder="Password">
+                    </div>
+                    <div class="col-5 left">
+                        <div class="row center ">
+                            <button (click)="toggleVisibility()" class="btn btn-color ">Login</button>
+                        </div>
+                    </div>
+                    <div class="col"></div>
+                    <div class="col-5 right">
+                        <div class="row center ">
+                            <button class="btn btn-color ">Create</button>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            </div>
+        </div>
+    </div>

@@ -1,0 +1,58 @@
+.card {
+    height: 50vh;
+    background-color: rgba(59, 59, 59, 0.603);
+    color: white;
+
+}
+
+.center {
+    display: flex;
+    /* flex-direction: row; */
+    align-items: center;
+    justify-content: center;
+
+}
+
+.sub_div {
+    position: absolute;
+    bottom: 10px;
+    /* width: 100%; */
+    /* overflow-x: hidden; */
+}
+
+
+.page {
+    background-color: black;
+    flex: 1;
+    overflow: hidden;
+}
+
+.header {
+    color: white;
+}
+
+.btn-color {
+    color: white;
+    background-color: rgb(149, 123, 215);
+
+    /* min-width: 100%; */
+    /* Custom background color */
+}
+.left{
+    margin-left: 15px;
+}
+.right{
+    margin-right: 15px;
+}
+.check {
+    background-color: white;
+    /* Custom background color */
+}
+
+.bottom {
+    margin-bottom: 2.5rem;
+}
+
+.pad {
+    padding: 25px;
+}
