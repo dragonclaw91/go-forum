@@ -1,11 +1,13 @@
-import { Component,ChangeDetectionStrategy, } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-// import { LoginComponent } from './login/login.component';
+import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
+
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
-template: `<router-outlet>`,
+  standalone: true,
+  imports: [RouterOutlet, BsDropdownModule],
+  template: `<router-outlet></router-outlet>`,
 
 })
 export class AppComponent {

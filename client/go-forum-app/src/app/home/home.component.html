@@ -1,1 +1,32 @@
-<p>home works!</p>
+<div class="page  test">
+    <h1 class="header ">Forum</h1>
+    <div class=" row left ">
+        <div class="col shrink ">
+            <div class="card">
+                <div class="card-body row ">
+                    <h4 class="card-title bottom text-center w-100">Have something to say?</h4>
+                    <p class="center">create a post and start a discussion</p>
+                    <div class="col">
+                        <div class="row center ">
+                            <button class="btn btn-color ">Create a New Post</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="row l-aliign wrap">
+                <div class="col-md-4 center" >
+                    <p-select [options]="cities" [(ngModel)]="selectedCity" optionLabel="name"
+                    placeholder="Select a City" />
+                </div>
+                <div class="col-md-4 " >
+                    <p-iconfield>
+                        <p-inputicon styleClass="pi pi-search" />
+                        <input type="text" pInputText placeholder="Search" />
+                    </p-iconfield>
+                </div>
+            </div>
+
+        </div>
+    </div>

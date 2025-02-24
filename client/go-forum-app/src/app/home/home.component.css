@@ -1,0 +1,118 @@
+
+.card {
+    background-color: rgba(59, 59, 59, 0.603);
+    color: white;
+    max-width: 400px;
+    padding: 10px
+}
+.shrink{
+max-width: 500px;
+}
+.center{
+display: flex;
+justify-content: center;
+    }
+.center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+}
+.back{
+    color: white;
+}
+
+.l-aliign{
+
+ justify-content: space-between;
+
+}
+
+.wrap{
+    display: flex;
+    flex-wrap: nowrap;
+}
+
+.sub_div {
+    position: absolute;
+    bottom: 10px;
+    /* width: 100%; */
+    /* overflow-x: hidden; */
+}
+
+
+.page {
+    background-color: black;
+    flex: 1;
+height: 100vh;
+} 
+
+.p-select{
+    background-color: black;
+    color:rgba(204, 202, 202, 0.529);
+    border: 2px solid;
+    border-radius: 10px;
+    border-color: rgba(204, 202, 202, 0.529);
+  width:300px;
+   padding:20px
+}
+
+:host ::ng-deep    .p-select-list-container {
+        color:green;
+        background-color: pink;
+ }
+
+ :host ::ng-deep    .p-select-label {
+display: flex;
+align-items: center;
+
+}
+
+
+
+.header {
+    color: white;
+padding-top: 30px;
+padding-bottom: 30px;
+padding-left: 50px;
+background-color: rgba(59, 59, 59, 0.603);
+}
+
+.btn-color {
+    color: white;
+    background-color: rgb(136, 91, 195);
+
+    /* min-width: 100%; */
+    /* Custom background color */
+}
+.left{
+    margin-left: 50px;
+    margin-top: 50px;
+}
+.right{
+    margin-right: 15px;
+}
+.check {
+    background-color: white;
+    /* Custom background color */
+}
+
+.bottom {
+    margin-bottom: 2.5rem;
+}
+
+.testing{
+    background-color: pink;
+}
+
+.pad {
+    padding: 25px;
+}
+
+.width{
+    width: 100%;
+    background-color: black;
+    color: rgba(242, 242, 242, 0.434);
+    border-radius: 5px;
+    height: 50px;
+}

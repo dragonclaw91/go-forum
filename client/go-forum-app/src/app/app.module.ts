@@ -1,21 +1,14 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { NbThemeModule, NbLayoutModule, NbCardModule } from '@nebular/theme';
+import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
 import { AppComponent } from './app.component';
 
 @NgModule({
-  declarations: [
-
-    // Other components can be added here
-  ],
   imports: [
     BrowserModule,
-    NbThemeModule.forRoot(), // Nebular theme setup
-    NbLayoutModule,          // Layout module
-    NbCardModule,           // Card module
-    // Other modules can be added here
+    BsDropdownModule.forRoot() // Ensure this line is present
   ],
   providers: [],
-//   bootstrap: [AppComponent] // Bootstrap your root component
+  bootstrap: []  // This should be correctly referencing AppComponent
 })
 export class AppModule { }
