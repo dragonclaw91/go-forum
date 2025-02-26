@@ -1,36 +1,63 @@
-
 .card {
     background-color: rgba(59, 59, 59, 0.603);
     color: white;
-    max-width: 400px;
+    width: 100%;
     padding: 10px
 }
-.shrink{
-max-width: 500px;
+
+.topic{
+    background-color: rgba(59, 59, 59, 0.603);
+    color: white;
+    padding: 10px
 }
-.center{
-display: flex;
-justify-content: center;
-    }
+
+.shrink {
+    max-width: 500px;
+}
+
+.center {
+    display: flex;
+    justify-content: center;
+}
+
 .center {
     display: flex;
     align-items: center;
     justify-content: center;
 
 }
-.back{
+
+.back {
     color: white;
 }
 
-.l-aliign{
+.l-aliign {
 
- justify-content: space-between;
+    justify-content: space-between;
 
 }
 
-.wrap{
+.wrap {
     display: flex;
-    flex-wrap: nowrap;
+flex-wrap:wrap-reverse;
+}
+
+.auto {
+    width: auto;
+
+}
+
+.top {
+    padding-bottom: 80px;
+}
+
+.tpsd-right {
+    padding-right: 10px;
+}
+
+.end {
+display: flex;
+justify-content: end;
 }
 
 .sub_div {
@@ -44,27 +71,48 @@ justify-content: center;
 .page {
     background-color: black;
     flex: 1;
-height: 100vh;
-} 
+    height: 100vh;
+}
 
-.p-select{
+.input {
+    color: rgba(204, 202, 202, 0.529);;
+    padding: 10px 10px 10px 30px;
+    border: 2px solid;
+    font-size: larger;
+    width: 290px;
     background-color: black;
-    color:rgba(204, 202, 202, 0.529);
+    border-color: rgba(204, 202, 202, 0.529);
+    border-radius: 10px;
+}
+
+.p-inputicon {
+    padding-left: 5px;
+    top: 36%;
+    color: rgba(204, 202, 202, 0.529);
+}
+
+.p-select {
+    background-color: black;
+    color: rgba(204, 202, 202, 0.529);
     border: 2px solid;
     border-radius: 10px;
     border-color: rgba(204, 202, 202, 0.529);
-  width:300px;
-   padding:20px
+    width: 300px;
+    padding: 10px;
+
 }
 
-:host ::ng-deep    .p-select-list-container {
-        color:green;
-        background-color: pink;
- }
+:host ::ng-deep .p-select-list-container {
+    padding-left: 10px;
+    color: rgba(204, 202, 202, 0.529);
+    border: 2px solid;
+    border-radius: 10px;
+    border-color: rgba(204, 202, 202, 0.529);
+}
 
- :host ::ng-deep    .p-select-label {
-display: flex;
-align-items: center;
+:host ::ng-deep .p-select-label {
+    display: flex;
+    justify-content: center;
 
 }
 
@@ -72,10 +120,10 @@ align-items: center;
 
 .header {
     color: white;
-padding-top: 30px;
-padding-bottom: 30px;
-padding-left: 50px;
-background-color: rgba(59, 59, 59, 0.603);
+    padding-top: 30px;
+    padding-bottom: 30px;
+    padding-left: 50px;
+    background-color: rgba(59, 59, 59, 0.603);
 }
 
 .btn-color {
@@ -85,13 +133,16 @@ background-color: rgba(59, 59, 59, 0.603);
     /* min-width: 100%; */
     /* Custom background color */
 }
-.left{
+
+.left {
     margin-left: 50px;
     margin-top: 50px;
 }
-.right{
+
+.right {
     margin-right: 15px;
 }
+
 .check {
     background-color: white;
     /* Custom background color */
@@ -101,7 +152,7 @@ background-color: rgba(59, 59, 59, 0.603);
     margin-bottom: 2.5rem;
 }
 
-.testing{
+.testing {
     background-color: pink;
 }
 
@@ -109,7 +160,7 @@ background-color: rgba(59, 59, 59, 0.603);
     padding: 25px;
 }
 
-.width{
+.width {
     width: 100%;
     background-color: black;
     color: rgba(242, 242, 242, 0.434);

@@ -1,12 +1,11 @@
-html, body {
-    height: 100%;
-    margin: 0; /* Remove default margin */
-}
+
+
 
 app-root {
+    overflow: hidden;
     height: 100%;
-    display: flex; /* Optional: For flex layout */
-    flex-direction: column; /* Optional: For vertical layout */
+    display: flex; 
+    flex-direction: column; 
 }
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }

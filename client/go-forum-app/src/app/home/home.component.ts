@@ -7,10 +7,13 @@ import { SelectModule } from 'primeng/select';
 import { FormsModule } from '@angular/forms'; 
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
+import { CardModule } from 'primeng/card';
+
 
 @Component({
 	selector: 'app-root',
 	imports: [  
+    CardModule,
     InputIconModule,
     IconFieldModule ,
     FormsModule,

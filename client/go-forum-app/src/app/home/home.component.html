@@ -14,19 +14,33 @@
                 </div>
             </div>
         </div>
-        <div class="col">
-            <div class="row l-aliign wrap">
-                <div class="col-md-4 center" >
+        <div class="col offset-md-1">
+            <div class="row l-aliign ">
+                <div class="col top g-0">
                     <p-select [options]="cities" [(ngModel)]="selectedCity" optionLabel="name"
-                    placeholder="Select a City" />
+                        placeholder="Select a City" />
                 </div>
-                <div class="col-md-4 " >
+                <div class="col g-0 top">
                     <p-iconfield>
-                        <p-inputicon styleClass="pi pi-search" />
-                        <input type="text" pInputText placeholder="Search" />
+                        <p-inputicon class="p-inputicon" styleClass="pi pi-search" />
+                        <input class="input" type="text" pInputText placeholder="Search" />
                     </p-iconfield>
                 </div>
             </div>
+            <div class="row right">
+            
+                <div class="topic col-xl-8 ">
+                        <p-card header="Simple Card">
+                            <p class="m-0">
+                                Lorem ipsum dolor sit amet, consectetur adipisicing elit. Inventore sed consequuntur
+                                error repudiandae numquam deserunt quisquam repellat libero asperiores earum nam nobis,
+                                culpa ratione quam perferendis esse, cupiditate neque
+                                quas!
+                            </p>
+                        </p-card>
+                </div>
+           
 
+            </div>
         </div>
     </div>
