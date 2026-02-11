@@ -8,8 +8,23 @@
                     <p class="center">create a post and start a discussion</p>
                     <div class="col">
                         <div class="row center ">
-                            <button class="btn btn-color ">Create a New Post</button>
+                            <button (click)="toggleVisibility()" class="btn btn-color ">Create a New Post</button>
                         </div>
+                        <p-dialog header="Create Post" [modal]="true" [(visible)]="isVisible">
+                            <div class=" col">
+                                <div class="row">
+                                    <label  for="username" class="center font-semibold w-24">Description</label>
+                                </div>
+                                <div class="row">
+                                    <textarea pTextarea></textarea>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end gap-2">
+                                <button (click)="toggleVisibility()" class="btn btn-color ">Cancel</button>
+                                <button (click)="toggleVisibility()" class="btn btn-color ">Save </button>
+                            </div>
+                        </p-dialog>
                     </div>
                 </div>
             </div>
@@ -17,8 +32,7 @@
         <div class="col offset-md-1">
             <div class="row l-aliign ">
                 <div class="col top g-0">
-                    <p-select [options]="cities" [(ngModel)]="selectedCity" optionLabel="name"
-                        placeholder="Select a City" />
+                    <p-select [options]="cities" [(ngModel)]="selectedCity" optionLabel="name" placeholder="Filter" />
                 </div>
                 <div class="col g-0 top">
                     <p-iconfield>
@@ -28,18 +42,42 @@
                 </div>
             </div>
             <div class="row right">
-            
-                <div class="topic col-xl-8 ">
-                        <p-card header="Simple Card">
-                            <p class="m-0">
-                                Lorem ipsum dolor sit amet, consectetur adipisicing elit. Inventore sed consequuntur
-                                error repudiandae numquam deserunt quisquam repellat libero asperiores earum nam nobis,
-                                culpa ratione quam perferendis esse, cupiditate neque
-                                quas!
-                            </p>
-                        </p-card>
+                @for (subpost of subposts; track subpost.id) {
+                <div class="topic pointer col-xl-8 ">
+                    <p-card>
+                        <div class="row">
+                            <div class="col-1 end approve-row">
+                                {{subpost.votes}}
+                            </div>
+                            <div class="col-1 approve-row">
+                                <div class="row">
+                                    <p-inputicon class="approve" styleClass="pi pi-thumbs-up-fill" />
+                                </div>
+                            </div>
+                            <div class="col">
+                                <p class="m-0">
+                                    {{subpost.description}}
+                                </p>
+                            </div>
+                            <div class="col-3 ">
+                                <div class="row center ">
+                                    {{subpost.created_at | date}}
+                                </div>
+                                <div class="row center comment-row">
+                                    <div class="col-1">
+                                        <p-inputicon class="comment right-space" styleClass="pi pi-comment" />
+                                    </div>
+                                    <div class="col-1">
+                                        {{subpost.replies}}
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </p-card>
                 </div>
-           
+                }
+
 
             </div>
         </div>

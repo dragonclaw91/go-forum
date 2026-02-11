@@ -4,6 +4,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import {FormsModule} from '@angular/forms';
+import { AuthService } from '../Services/auth.service'
 
 
 
@@ -17,21 +18,39 @@ import {FormsModule} from '@angular/forms';
 
 export class LoginComponent {
 
-  constructor(private router: Router) { }
+  constructor(private router: Router, private  authService: AuthService) { }
+  
 
-  email = '';
-  password = '';
+loginData = { username: '', password: '' };
 
 isVisible = false;
 
 toggleVisibility() {
   this.isVisible = !this.isVisible
+  this.onSignIn()
 
 }
-onSignIn() {
-  console.log('Sign In:', { email: this.email, password: this.password });
-  this.router.navigate(['/home']);
-}
+
+
+
+  onSignIn() {
+    console.log('Sign In:', { username: this.loginData.username, password: this.loginData.password });
+    this.authService.login(this.loginData).subscribe({
+      next: (response) => {
+        console.log('Login Successful!', response);
+        this.router.navigate(['/home']);
+        // Here is where you would redirect to the Reddit feed
+      },
+      error: (err) => {
+        console.error('Login Failed', err);
+      }
+    });
+  }
+
+// onSignIn() {
+//   console.log('Sign In:', { email: this.loginData.username, password: this.loginData.password });
+//   this.router.navigate(['/home']);
+// }
 
 
 }

@@ -171,7 +171,7 @@ func putSubPost(c *gin.Context) {
 	// this should never change so we hard code it
 	sql := "UPDATE subposts SET "
 
-	// Iterate over the subpost to parse it to build th final sql string and the new values of things we want to change
+	// Iterate over the subpost to parse it to build the final sql string and the new values of things we want to change
 	for i := 0; i < len(subpost.Fields); i++ {
 		// append the name of the field we want to update plus a placeholder for postgres
 		sql = sql + subpost.Fields[i].Key + " = $" + strconv.Itoa(i+1)
@@ -569,7 +569,10 @@ func main() {
 
 	})
 	router.POST("/v1/auth/refresh", Myauth.RefreshHandler)
-	router.POST("v1/signup", Myauth.Signup)
+	router.POST("v1/signup", func(c *gin.Context) {
+		c.Set("request", c.Request)
+		Myauth.Signup(c, db)
+	})
 
 	router.GET("/v1/subpost", Myauth.Middleware(getSubPost))
 	router.GET("/v1/replies", Myauth.Middleware(getReplies))

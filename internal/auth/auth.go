@@ -285,8 +285,8 @@ func ValidateJWT(tokenString string, secret []byte) (dgjwt.MapClaims, error) {
 
 // SIGNUP FUNCTIONS
 
-func Signup(c *gin.Context) {
-
+func Signup(c *gin.Context, db *sql.DB) {
+	fmt.Println("In the function at least")
 	var creds struct {
 		Name     string `json:"username"`
 		Password string `json:"password"`
@@ -294,6 +294,7 @@ func Signup(c *gin.Context) {
 
 	//  parse the incoming JSON request and bind it to the creds struct.
 	if err := c.ShouldBindJSON(&creds); err != nil {
+
 		// return this if we can't parse the data
 		c.JSON(400, gin.H{"error": "Invalid request"})
 		return
@@ -305,6 +306,23 @@ func Signup(c *gin.Context) {
 		}
 		c.JSON(http.StatusOK, data)
 	} else {
+		fmt.Printf("No Error: %+v\n", creds)
+		// 2. THE MISSING LINK: The actual Database Insert
+		defer func() {
+			if r := recover(); r != nil {
+				log.Println("Panic in queryData:", r)
+			}
+		}()
+
+		rows, err := db.Query(`INSERT INTO users (name, password) VALUES ($1, $2)`, creds.Name, creds.Password)
+
+		if err != nil {
+
+			println(err.Error())
+			log.Fatalf("Query error: %v", err)
+		}
+
+		defer rows.Close()
 		// Respond with success message or status
 		c.JSON(200, gin.H{"message": "User created successfully"})
 	}

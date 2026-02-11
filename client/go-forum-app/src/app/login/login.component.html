@@ -8,10 +8,10 @@
                     <h1 class="card-title bottom text-center w-100">Login</h1>
 
                     <div class="form-group  bottom "> <!-- Add margin-bottom for spacing -->
-                        <input [(ngModel)]="email"  type="text" class="form-control" id="input1" placeholder="Username">
+                        <input [(ngModel)]="loginData.username"  type="text" class="form-control" id="input1" placeholder="Username">
                     </div>
                     <div class="form-group  w-100 "> <!-- Add margin-bottom for spacing -->
-                        <input type="text" class="form-control" id="input2" placeholder="Password">
+                        <input [(ngModel)]="loginData.password" type="text" class="form-control" id="input2" placeholder="Password">
                     </div>
 
                     <div class="col-5 left">
@@ -36,7 +36,7 @@
                 <div class="card-body row ">
                     <h1 class="card-title bottom text-center w-100">Login</h1>
                     <div class="form-group  bottom "> <!-- Add margin-bottom for spacing -->
-                        <input type="text" class="form-control" id="input1" placeholder="Email">
+                        <input type="text" class="form-control" id="input1" placeholder="Username">
                     </div>
                     <div class="form-group  w-100 "> <!-- Add margin-bottom for spacing -->
                         <input type="text" class="form-control" id="input2" placeholder="Password">
