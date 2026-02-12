@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"time"
 
@@ -100,7 +101,7 @@ func SetupGoGuardian() {
 		Algorithm: jwt.HS256,
 	}
 	cache := libcache.FIFO.New(0)
-	cache.SetTTL(time.Minute * 5)
+	cache.SetTTL(time.Minute * 15)
 	jwtStrategy := jwt.New(cache, keeper)
 	strategy = union.New(jwtStrategy)
 }
@@ -168,10 +169,19 @@ func LoginHandler(c *gin.Context, db *sql.DB) {
 			// return
 		}
 
+		c.SetCookie(
+			"refresh_token",
+			refreshToken,
+			3600*24*30, // 30 days
+			"/",
+			"",
+			false, // Set to true when you have HTTPS/SSL
+			true,  // The "Pro" flag: HttpOnly
+		)
+
 		// Send both tokens to the client
 		c.JSON(200, gin.H{
-			"access_token":  accessToken,
-			"refresh_token": refreshToken,
+			"access_token": accessToken,
 		})
 	} else {
 		// failing to verfiy username and password return this
@@ -251,10 +261,19 @@ func RefreshHandler(c *gin.Context) {
 		return
 	}
 
+	c.SetCookie(
+		"refresh_token",
+		newRefreshToken,
+		3600*24*30, // 30 days
+		"/",
+		"",
+		false, // Set to true when you have HTTPS/SSL
+		true,  // The "Pro" flag: HttpOnly
+	)
+
 	// Return the new access token
 	c.JSON(200, gin.H{
-		"access_token":  accessToken,
-		"refresh_token": newRefreshToken,
+		"access_token": accessToken,
 	})
 }
 
@@ -286,17 +305,42 @@ func ValidateJWT(tokenString string, secret []byte) (dgjwt.MapClaims, error) {
 // SIGNUP FUNCTIONS
 
 func Signup(c *gin.Context, db *sql.DB) {
-	fmt.Println("In the function at least")
+
 	var creds struct {
 		Name     string `json:"username"`
 		Password string `json:"password"`
 	}
 
+	//ensuring there are no trailing spaces so "bob" and " bob" are treated as the same name
+	// creds.Name = strings.TrimSpace(creds.Name)
+
 	//  parse the incoming JSON request and bind it to the creds struct.
 	if err := c.ShouldBindJSON(&creds); err != nil {
 
-		// return this if we can't parse the data
-		c.JSON(400, gin.H{"error": "Invalid request"})
+		// return this if we can't parse the data or more likley the field was left blank
+		c.JSON(400, gin.H{"error": "All fields are required!"})
+		return
+	}
+	// Checking for blank sapces to ensure some can't just bypass the form
+	if strings.TrimSpace(creds.Name) == "" || strings.TrimSpace(creds.Password) == "" {
+		c.JSON(400, gin.H{"error": "Username and password cannot be empty"})
+		return
+	}
+	var exists bool
+	// We use 'EXISTS' because it's faster than 'SELECT *'—it stops looking after it finds one match.
+	query := `SELECT EXISTS(SELECT 1 FROM users WHERE name=$1)`
+	creds.Name = strings.TrimSpace(creds.Name)
+
+	err := db.QueryRow(query, creds.Name).Scan(&exists)
+	if err != nil {
+		fmt.Println("Database check failed:", err)
+		c.JSON(500, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	if exists {
+		fmt.Printf("Blocked: User %s already exists\n", creds.Name)
+		c.JSON(400, gin.H{"error": "Username is already taken"})
 		return
 	}
 	creds.Password = hashPassword(creds.Password)
@@ -307,7 +351,7 @@ func Signup(c *gin.Context, db *sql.DB) {
 		c.JSON(http.StatusOK, data)
 	} else {
 		fmt.Printf("No Error: %+v\n", creds)
-		// 2. THE MISSING LINK: The actual Database Insert
+
 		defer func() {
 			if r := recover(); r != nil {
 				log.Println("Panic in queryData:", r)

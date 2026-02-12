@@ -30,14 +30,24 @@
 .header {
     color: white;
 }
-
-.btn-color {
-    color: white;
-    background-color: rgb(136, 91, 195);
-
-    /* min-width: 100%; */
-    /* Custom background color */
+/* 1. The 'Waiting' State (Disabled) */
+.btn-color:disabled {
+    background-color: #e0e0e0 !important; /* Light grey/off-white */
+    color: #999999 !important;           /* Muted grey text */
+    border: 1px solid #cccccc !important;
+    cursor: not-allowed;
+    opacity: 1; /* Keep it solid so it's readable */
 }
+
+/* 2. The 'Ready' State (Active) */
+/* This will kick in the second the form becomes valid */
+.btn-color:not(:disabled) {
+    color: white !important;
+    background-color: rgb(136, 91, 195);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: all 0.3s ease; /* Smooth fade-in of the color */
+}
+
 .left{
     margin-left: 15px;
 }

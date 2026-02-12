@@ -4,56 +4,86 @@
         <div class="col-md-6  ">
             <div class="card">
                 @if(!isVisible){
-                <div class="card-body row ">
-                    <h1 class="card-title bottom text-center w-100">Login</h1>
+              <form [formGroup]="signupForm" (ngSubmit)="onSignIn()" class="card-body row">
+    <h1 class="card-title bottom text-center w-100">Login</h1>
 
-                    <div class="form-group  bottom "> <!-- Add margin-bottom for spacing -->
-                        <input [(ngModel)]="loginData.username"  type="text" class="form-control" id="input1" placeholder="Username">
-                    </div>
-                    <div class="form-group  w-100 "> <!-- Add margin-bottom for spacing -->
-                        <input [(ngModel)]="loginData.password" type="text" class="form-control" id="input2" placeholder="Password">
-                    </div>
+    <div class="form-group bottom">
+        <input 
+            formControlName="username" 
+            type="text" 
+            class="form-control" 
+            id="input1" 
+            placeholder="Username">
+    </div>
 
-                    <div class="col-5 left">
-                        <div class="row center ">
-                            <button (click)="onSignIn()" class="btn btn-color ">Login</button>
-                        </div>
+    <div class="form-group w-100">
+        <input 
+            formControlName="password" 
+            type="password" 
+            class="form-control" 
+            id="input2" 
+            placeholder="Password">
+    </div>
 
+    <div class="col-5 left">
+        <div class="row center">
+            <button type="submit" class="btn-color btn" [disabled]="signupForm.invalid" >
+                Login
+            </button>
+        </div>
+    </div>
 
-                    </div>
-                    <div class="col"></div>
-                    <div class="col-5 right">
+    <div class="col"></div>
 
+    <div class="col-5 right">
+        <div class="row center">
+            <button type="button" (click)="toggleVisibility()" class="btn btn-color">
+               Sign Up
+            </button>
+        </div>
+    </div>
+</form>
+                }@else {
+              <form [formGroup]="signupForm" (ngSubmit)="onSignIn()" class="card-body row">
+    <h1 class="card-title bottom text-center w-100">Login</h1>
 
-                        <div class="row center ">
-                            <button (click)="toggleVisibility()" class="btn btn-color ">Signup</button>
+    <div class="form-group bottom">
+        <input 
+            formControlName="username" 
+            type="text" 
+            class="form-control" 
+            id="input1" 
+            placeholder="Username">
+    </div>
 
-                        </div>
-                    </div>
+    <div class="form-group w-100">
+        <input 
+            formControlName="password" 
+            type="password" 
+            class="form-control" 
+            id="input2" 
+            placeholder="Password">
+    </div>
 
-                </div>
-            }@else {
-                <div class="card-body row ">
-                    <h1 class="card-title bottom text-center w-100">Login</h1>
-                    <div class="form-group  bottom "> <!-- Add margin-bottom for spacing -->
-                        <input type="text" class="form-control" id="input1" placeholder="Username">
-                    </div>
-                    <div class="form-group  w-100 "> <!-- Add margin-bottom for spacing -->
-                        <input type="text" class="form-control" id="input2" placeholder="Password">
-                    </div>
-                    <div class="col-5 left">
-                        <div class="row center ">
-                            <button (click)="toggleVisibility()" class="btn btn-color ">Login</button>
-                        </div>
-                    </div>
-                    <div class="col"></div>
-                    <div class="col-5 right">
-                        <div class="row center ">
-                            <button class="btn btn-color ">Create</button>
-                        </div>
-                    </div>
-                </div>
-            }
+    <div class="col-5 left">
+        <div class="row center">
+            <button type="submit" [disabled]="signupForm.invalid" class="btn btn-color">
+                Login
+            </button>
+        </div>
+    </div>
+
+    <div class="col"></div>
+
+    <div class="col-5 right">
+        <div class="row center">
+            <button type="button" (click)="toggleVisibility()" class="btn btn-color">
+                Create
+            </button>
+        </div>
+    </div>
+</form>
+                }
 
             </div>
         </div>

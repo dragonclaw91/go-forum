@@ -3,22 +3,30 @@ import { RouterOutlet } from '@angular/router';
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import {FormsModule} from '@angular/forms';
-import { AuthService } from '../Services/auth.service'
+import {FormBuilder, FormGroup, FormsModule, Validators} from '@angular/forms';
+import { AuthService } from '../Services/auth.service';
+import { ReactiveFormsModule } from '@angular/forms';
+
 
 
 
 @Component({
   selector: 'app-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
 
 export class LoginComponent {
+signupForm!: FormGroup;
+  constructor(private router: Router, private  authService: AuthService, private fb: FormBuilder) {
+this.signupForm = this.fb.group({
+    username: ['', Validators.required],
+    password: ['', Validators.required]
+  });
 
-  constructor(private router: Router, private  authService: AuthService) { }
+   }
   
 
 loginData = { username: '', password: '' };
