@@ -108,7 +108,7 @@ func SetupGoGuardian() {
 
 // LoginHandler generates both access and refresh tokens
 func LoginHandler(c *gin.Context, db *sql.DB) {
-
+	println("in the LoginHandler")
 	var creds struct {
 		Name     string `json:"username"`
 		Password string `json:"password"`
@@ -168,7 +168,7 @@ func LoginHandler(c *gin.Context, db *sql.DB) {
 			c.JSON(500, gin.H{"error": "Failed to generate refresh token"})
 			// return
 		}
-
+		println("Setting g the cookie")
 		c.SetCookie(
 			"refresh_token",
 			refreshToken,
@@ -178,6 +178,7 @@ func LoginHandler(c *gin.Context, db *sql.DB) {
 			false, // Set to true when you have HTTPS/SSL
 			true,  // The "Pro" flag: HttpOnly
 		)
+		println("Cookie set")
 
 		// Send both tokens to the client
 		c.JSON(200, gin.H{
@@ -191,7 +192,8 @@ func LoginHandler(c *gin.Context, db *sql.DB) {
 
 // Validates the username and password (simple example)
 func validUser(hashedPassword, password string) bool {
-	println("VALIDATING")
+	fmt.Printf("DEBUG: Hashed from DB: %q\n", hashedPassword)
+	fmt.Printf("DEBUG: Plain from User: %q\n", password)
 
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 	if err != nil {
@@ -310,9 +312,6 @@ func Signup(c *gin.Context, db *sql.DB) {
 		Name     string `json:"username"`
 		Password string `json:"password"`
 	}
-
-	//ensuring there are no trailing spaces so "bob" and " bob" are treated as the same name
-	// creds.Name = strings.TrimSpace(creds.Name)
 
 	//  parse the incoming JSON request and bind it to the creds struct.
 	if err := c.ShouldBindJSON(&creds); err != nil {

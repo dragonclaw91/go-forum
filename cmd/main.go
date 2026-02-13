@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"reflect"
 	"strconv"
+	"time"
 
 	// "github.com/shaj13/libcache"
 	// _ "github.com/shaj13/libcache/fifo"
@@ -556,8 +557,22 @@ func main() {
 	Myauth.SetupGoGuardian()
 
 	router := gin.Default()
+	router.SetTrustedProxies(nil)
 
-	router.Use(cors.Default())
+	router.Use(cors.New(cors.Config{
+		// 1. MUST match your Angular URL exactly
+		AllowOrigins: []string{"http://localhost:4200"},
+
+		// 2. Allow the browser to see these specific headers
+		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
+		AllowHeaders: []string{"Origin", "Content-Type", "Accept", "Authorization"},
+
+		// 3. THIS IS THE BIG ONE - This makes the headers "visible"
+		AllowCredentials: true,
+
+		// 4. How long the browser should trust this "Yes" (prevents constant OPTIONS checks)
+		MaxAge: 12 * time.Hour,
+	}))
 
 	router.POST("/v1/subpost/create", Myauth.Middleware(createSubPost))
 	router.POST("/v1/replies/create", Myauth.Middleware(createReply))
