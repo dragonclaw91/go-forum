@@ -4,7 +4,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import {FormBuilder, FormGroup, FormsModule, Validators} from '@angular/forms';
-import { AuthService } from '../Services/auth.service';
+import { AuthService } from '../auth/auth.service';
 import { ReactiveFormsModule } from '@angular/forms';
 
 

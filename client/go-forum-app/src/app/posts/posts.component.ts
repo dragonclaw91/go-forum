@@ -31,7 +31,7 @@ import { TextareaModule } from 'primeng/textarea';
      MatFormFieldModule, 
      MatInputModule 
     ],
-  templateUrl: './home.component.html',
+  templateUrl: './posts.component.html',
   styles:` @use '@angular/material' as mat;
   .my-dropdown-panel {
     @include mat.form-field-overrides((
@@ -40,9 +40,9 @@ import { TextareaModule } from 'primeng/textarea';
   ));
   }
   `,
-  styleUrl: './home.component.css'
+  styleUrl: './posts.component.css'
 })
-export class HomeComponent {
+export class PostsComponent {
   cities: any[];
   selectedCity: any;
 

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
-import { UserService } from './user.service';
+import { UserService } from '../Services/user.service';
 
 interface LoginResponse {
     access_token: string; // The "Label"
