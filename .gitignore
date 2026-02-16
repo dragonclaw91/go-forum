@@ -1,1 +1,4 @@
 /Env/.env
+node_modules/
+tmp/
+.angular/

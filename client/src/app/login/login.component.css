@@ -39,3 +39,45 @@
 .apply-shake {
   animation: shake 0.4s ease-in-out;
 }
+
+/* The main container for the error message */
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #fff5f5; /* Very light red */
+  border: 1px solid #feb2b2; /* Soft red border */
+  border-left: 4px solid #f56565; /* Bold red accent stripe */
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+  color: #c53030; /* Deep red text for readability */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  
+  /* This kicks off the entry animation below */
+  animation: slideDown 0.3s ease-out forwards;
+}
+
+.error-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.error-icon {
+  font-size: 1.2rem;
+}
+
+.close-button {
+  background: transparent;
+  border: none;
+  color: #fc8181;
+  font-size: 1.5rem;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.close-button:hover {
+  color: #c53030;
+}

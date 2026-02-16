@@ -185,8 +185,9 @@ func LoginHandler(c *gin.Context, db *sql.DB) {
 			"access_token": accessToken,
 		})
 	} else {
+		c.String(http.StatusUnauthorized, "Invalid username or password. Please try again.")
 		// failing to verfiy username and password return this
-		c.JSON(401, gin.H{"error": "Invalid username or password. Please try again."})
+
 	}
 }
 
