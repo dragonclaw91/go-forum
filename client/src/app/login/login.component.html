@@ -20,14 +20,14 @@
 
           <form (ngSubmit)="onSignIn()" class="d-flex flex-column flex-grow-1 justify-content-around">
             <div class="mb-3">
-              <label class="form-label">Username</label>
-              <input type="username" class="form-control form-control-lg py-3" placeholder="username"
+              <label  class="form-label label-wrapper" [class.has-error]="errorLabel()">Username</label>
+              <input type="username" name="uesrname" class="form-control form-control-lg py-3" placeholder="username"
                 [ngModel]="username()">
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Password</label>
-              <input type="password" class="form-control form-control-lg py-3" [ngModel]="password()">
+              <label class="form-label label-wrapper" [class.has-error]="errorLabel()">Password</label>
+              <input type="password" name="password" class="form-control form-control-lg py-3" [ngModel]="password()">
             </div>
 
             <div class="d-grid gap-2 mt-4">

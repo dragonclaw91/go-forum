@@ -35,8 +35,9 @@ export class LoginComponent implements OnInit {
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
   shakeTrigger = signal(false);
-  username = signal('')
-  password = signal('')
+  errorLabel = signal(false);
+  username = signal('');
+  password = signal('');
   // Computed signal for the submit button text
   submitLabel = computed(() =>
     this.isLoginMode() ? 'Login' : 'Create Account'
@@ -79,13 +80,16 @@ export class LoginComponent implements OnInit {
   triggerShake() {
     // 1. Turn it on
     this.shakeTrigger.set(true);
-
+    this.errorLabel.set(true);
     // 2. Turn it off after the animation finishes (400ms)
     // This allows the class to be re-added on the next click
     setTimeout(() => {
       this.shakeTrigger.set(false);
+      this.errorLabel.set(false)
     }, 400);
   }
+
+
 
   onSignIn() {
     const  loginData = { username: '', password: '' };
