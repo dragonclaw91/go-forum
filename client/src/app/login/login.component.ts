@@ -25,6 +25,7 @@ export class LoginComponent implements OnInit {
   signupForm!: FormGroup;
   private authService = inject(AuthService);
   private router = inject(Router)
+  private errorTimer: any;
   connectionStatus = signal('Initializing...');
   ngOnInit(): void {
     console.log('Component is now on the DOM!');
@@ -45,7 +46,7 @@ export class LoginComponent implements OnInit {
 
 
 
-  isVisible = false;
+
 
 
 
@@ -60,7 +61,7 @@ export class LoginComponent implements OnInit {
 
   toggleMode() {
     this.isLoginMode.update(v => !v);
-    this.errorMessage.set(null); // Clear errors when switching modes
+    // this.errorMessage.set(null); // Clear errors when switching modes
   }
 
   // onSubmit() {
@@ -85,7 +86,7 @@ export class LoginComponent implements OnInit {
     // This allows the class to be re-added on the next click
     setTimeout(() => {
       this.shakeTrigger.set(false);
-      this.errorLabel.set(false)
+      // this.errorLabel.set(false)
     }, 400);
   }
 
@@ -104,9 +105,14 @@ export class LoginComponent implements OnInit {
       },
       error: (err) => {
         console.log("Response", err.error)
-        const msg = err.srror?.error || 'an unexpected error occured'
+        const msg = err.error?.error || 'an unexpected error occured'
         this.errorMessage.set(msg);
-        setTimeout(() => this.errorMessage.set(null), 5000);
+        if (this.errorTimer) clearTimeout(this.errorTimer); // Kill the old timer!
+        const isMobile = window.innerWidth < 1000;
+        if(isMobile){
+         this.errorTimer = setTimeout(() => this.errorMessage.set(null), 5000);
+        }
+
         this.isLoading.set(false);
         this.triggerShake();
         console.error('Login Failed', err);

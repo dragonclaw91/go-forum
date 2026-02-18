@@ -11,7 +11,6 @@
           @if (errorMessage()) {
           <div class="error-banner">
             <div class="error-content">
-              <span class="icon">🚫</span>
               <p>{{ errorMessage() }}</p>
             </div>
             <button class="close-btn" (click)="clearError()">&times;</button>
@@ -20,7 +19,7 @@
 
           <form (ngSubmit)="onSignIn()" class="d-flex flex-column flex-grow-1 justify-content-around">
             <div class="mb-3">
-              <label  class="form-label label-wrapper" [class.has-error]="errorLabel()">Username</label>
+              <label  class="form-label label-wrapper has-error" [class.has-error]="errorLabel()">Username</label>
               <input type="username" name="uesrname" class="form-control form-control-lg py-3" placeholder="username"
                 [ngModel]="username()">
             </div>
