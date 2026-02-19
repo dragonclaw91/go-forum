@@ -34,6 +34,11 @@ var jwtSecret = []byte(jwtSecretString) // Secret for access token
 var refreshSecretString = os.Getenv("REFRESH_TOKEN_SECRET")
 var refreshSecret = []byte(refreshSecretString) // Secret for refresh token
 
+type Tokens struct {
+	Access  string
+	Refresh string
+}
+
 // var db *sql.DB
 
 // var Rsecret string
@@ -225,6 +230,27 @@ func generateJWTToken(username string, expiration time.Duration, secret []byte) 
 	return tokenString, nil
 }
 
+// The Specialist Function
+func generateTokenSuite(username string) (*Tokens, error) {
+	// 1. Create Access Token
+	accessToken, err := generateJWTToken(username, accessTokenExpiration, jwtSecret)
+	if err != nil {
+		return nil, err // Send the error up the chain
+	}
+
+	// 2. Create Refresh Token
+	refreshToken, err := generateJWTToken(username, refreshTokenExpiration, refreshSecret)
+	if err != nil {
+		return nil, err
+	}
+
+	// 3. Hand back the "Suite"
+	return &Tokens{
+		Access:  accessToken,
+		Refresh: refreshToken,
+	}, nil
+}
+
 // REFRESH FUNCTIONS
 
 func RefreshHandler(c *gin.Context) {
@@ -368,7 +394,9 @@ func Signup(c *gin.Context, db *sql.DB) {
 
 		defer rows.Close()
 		// Respond with success message or status
-		c.JSON(200, gin.H{"message": "User created successfully"})
+		c.JSON(200, gin.H{"message": "User created successfully",
+			"User": creds.Name,
+		})
 	}
 }
 

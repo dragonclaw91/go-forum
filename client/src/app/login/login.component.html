@@ -21,12 +21,12 @@
             <div class="mb-3">
               <label  class="form-label label-wrapper has-error" [class.has-error]="errorLabel()">Username</label>
               <input type="username" name="uesrname" class="form-control form-control-lg py-3" placeholder="username"
-                [ngModel]="username()">
+                [ngModel]="username()" (input)="onInputClear()">
             </div>
 
             <div class="mb-3">
               <label class="form-label label-wrapper" [class.has-error]="errorLabel()">Password</label>
-              <input type="password" name="password" class="form-control form-control-lg py-3" [ngModel]="password()">
+              <input type="password" name="password" class="form-control form-control-lg py-3" [ngModel]="password()" (input)="onInputClear()">
             </div>
 
             <div class="d-grid gap-2 mt-4">

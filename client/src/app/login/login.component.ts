@@ -26,10 +26,9 @@ export class LoginComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router)
   private errorTimer: any;
-  connectionStatus = signal('Initializing...');
+
   ngOnInit(): void {
     console.log('Component is now on the DOM!');
-    // this.checkBackendConnection();
   }
 
   isLoginMode = signal(true);
@@ -39,91 +38,64 @@ export class LoginComponent implements OnInit {
   errorLabel = signal(false);
   username = signal('');
   password = signal('');
-  // Computed signal for the submit button text
+
   submitLabel = computed(() =>
     this.isLoginMode() ? 'Login' : 'Create Account'
   );
 
-
-
-
-
-
-
-  // toggleVisibility() {
-  //   this.isVisible = !this.isVisible
-  //   this.onSignIn()
-
-  // }
-  clearError(){
-      this.errorMessage.set(null);
+  clearError() {
+    this.errorMessage.set(null);
+    this.errorLabel.set(false)
   }
 
   toggleMode() {
     this.isLoginMode.update(v => !v);
-    // this.errorMessage.set(null); // Clear errors when switching modes
   }
 
-  // onSubmit() {
-
-  //     // this.triggerEffect(messageFromJson);
-
-  //     // Replace 'formInvalid' with your actual validation check
-  //   const formInvalid = true; 
-
-  //   if (formInvalid) {
-  //     this.triggerShake();
-  //     return;
-  //   }
-  //     // Logic for Go backend integration goes here tomorrow
-  //   }
-
+  onInputClear() {
+    if (this.errorMessage()) {
+      this.clearError();
+    }
+  }
+  // shake the login card for a few seconds
   triggerShake() {
-    // 1. Turn it on
     this.shakeTrigger.set(true);
     this.errorLabel.set(true);
-    // 2. Turn it off after the animation finishes (400ms)
-    // This allows the class to be re-added on the next click
     setTimeout(() => {
       this.shakeTrigger.set(false);
-      // this.errorLabel.set(false)
     }, 400);
   }
 
 
 
   onSignIn() {
-    const  loginData = { username: '', password: '' };
+    const loginData = { username: '', password: '' };
     this.isLoading.set(true);
-    console.log('Sign In:', { username: loginData.username, password: loginData.password });
     this.authService.login(loginData).subscribe({
       next: (response) => {
         this.isLoading.set(false);
         console.log('Login Successful!', response);
         // this.router.navigate(['/home']);
-        // Here is where you would redirect to the Reddit feed
       },
       error: (err) => {
-        console.log("Response", err.error)
         const msg = err.error?.error || 'an unexpected error occured'
+
         this.errorMessage.set(msg);
-        if (this.errorTimer) clearTimeout(this.errorTimer); // Kill the old timer!
+
+        /* Kill the old timer
+          if we dont problems will happen when users
+          try to submit again before the error clears */
+        if (this.errorTimer) clearTimeout(this.errorTimer);
+
         const isMobile = window.innerWidth < 1000;
-        if(isMobile){
-         this.errorTimer = setTimeout(() => this.errorMessage.set(null), 5000);
+
+        if (isMobile) {
+          this.errorTimer = setTimeout(() => this.errorMessage.set(null), 5000);
         }
 
         this.isLoading.set(false);
         this.triggerShake();
-        console.error('Login Failed', err);
       }
     });
   }
-
-  // onSignIn() {
-  //   console.log('Sign In:', { email: this.loginData.username, password: this.loginData.password });
-  //   this.router.navigate(['/home']);
-  // }
-
-
 }
