@@ -1,5 +1,6 @@
 package Myauth
 
+//TODO: we need to rig up the profile pic endpoint somewhere along the lines
 import (
 	"bytes"
 	"database/sql"
@@ -35,8 +36,25 @@ var refreshSecretString = os.Getenv("REFRESH_TOKEN_SECRET")
 var refreshSecret = []byte(refreshSecretString) // Secret for refresh token
 
 type Tokens struct {
-	Access  string
-	Refresh string
+	Access  string `json:"access_token"`
+	Refresh string `json:"refresh_token"`
+}
+
+// User is for the Database and internal logic (The Vault)
+
+// this has everything a user is going to need at the frontend role lives in access token and here
+type User struct {
+	ID           uint   `gorm:"primaryKey"`
+	Username     string `gorm:"uniqueIndex"`
+	PasswordHash string `json:"-"` // This will never be sent to the frontend
+	ProfilePic   string `json:"profile_pic"`
+	Role         string `json:"role"`
+}
+
+// this will be used when creating a user largely
+type Credentials struct {
+	Name     string
+	Password string
 }
 
 // var db *sql.DB
@@ -53,6 +71,8 @@ var accessTokenExpiration = time.Minute * 15     // 15 minutes for access token
 var refreshTokenExpiration = time.Hour * 24 * 30 // 30 days for refresh token
 
 func Middleware(next gin.HandlerFunc) gin.HandlerFunc {
+
+	//TODO: we moved the logic for the access token to a struct we need to get rid of this
 
 	// Struct to match the expected JSON data
 	type RequestData struct {
@@ -111,31 +131,50 @@ func SetupGoGuardian() {
 	strategy = union.New(jwtStrategy)
 }
 
-// LoginHandler generates both access and refresh tokens
-func LoginHandler(c *gin.Context, db *sql.DB) {
-	println("in the LoginHandler")
-	var creds struct {
-		Name     string `json:"username"`
-		Password string `json:"password"`
-	}
+// TODO: this needs to be riged up everywhere and tested
+func GetCredientials(c *gin.Context) (*Credentials, error) {
 
-	//  parse the incoming JSON request and bind it to the creds struct.
+	var creds Credentials
 	if err := c.ShouldBindJSON(&creds); err != nil {
 		// return this if we can't parse the data
 		c.JSON(400, gin.H{"error": "Invalid request"})
-		return
+		return nil, err
+	} else {
+		return &creds, nil
 	}
 
-	name := creds.Name
-	password := creds.Password
+}
 
+// LoginHandler generates both access and refresh tokens
+func LoginHandler(c *gin.Context, db *sql.DB) {
+	println("in the LoginHandler")
+
+	creds, err := GetCredientials(c)
+	// var creds struct {
+	// 	Name     string `json:"username"`
+	// 	Password string `json:"password"`
+	// }
+
+	//  parse the incoming JSON request and bind it to the creds struct.
+	// if err := c.ShouldBindJSON(&creds); err != nil {
+	// 	// return this if we can't parse the data
+	// 	c.JSON(400, gin.H{"error": "Invalid request"})
+	// 	return
+	// }
+
+	// name := creds.Name
+	// password := creds.Password
+
+	// TODO: figure out where this needs to live
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("Panic in queryData:", r)
 		}
 	}()
 
-	rows, err := db.Query(`SELECT password FROM "users" WHERE name= $1`, name)
+	//TODO: we need to abstact this to another file andr efactor that
+
+	rows, err := db.Query(`SELECT password FROM "users" WHERE name= $1`, creds.Name)
 
 	if err != nil {
 
@@ -145,19 +184,22 @@ func LoginHandler(c *gin.Context, db *sql.DB) {
 
 	defer rows.Close()
 	if rows.Next() { // Iterate through the result set
-		err := rows.Scan(&password) // Scan the result into the password variable
+		err := rows.Scan(&creds.Password) // Scan the result into the password variable
 		if err != nil {
 			log.Fatalf("Error scanning row: %v", err)
 		}
 	}
-	println("CHECKING RESULT", name, password)
+	println("CHECKING RESULT", creds.Name, creds.Password)
 
 	// call validUser to verify username and password
 	// vaildUser is simply going to return true or false dependening if the correct creds were given
+
+	//TODO: we landed on using a struct for this we need to rig it up
 	if validUser(password, creds.Password) {
 		/*if vaild username and password  generate access and refresh tokens
 		handled by the generate JWTToken function */
 
+		//TODO: this is getting abstracted we need to clean it up
 		accessToken, err := generateJWTToken(creds.Name, accessTokenExpiration, jwtSecret)
 		if err != nil {
 			// if we cant generate a access token return this
@@ -216,6 +258,7 @@ func validUser(hashedPassword, password string) bool {
 // generateJWTToken creates a JWT token with the given expiration and secret
 func generateJWTToken(username string, expiration time.Duration, secret []byte) (string, error) {
 
+	//TODO: we need to add the access tokens to have role and name on them as well
 	// setting the expriation of the token and the username associated with it
 	claims := dgjwt.MapClaims{
 		"sub": username,
@@ -231,6 +274,7 @@ func generateJWTToken(username string, expiration time.Duration, secret []byte) 
 }
 
 // The Specialist Function
+// TODO: this needs to be rigged up tested and implemented
 func generateTokenSuite(username string) (*Tokens, error) {
 	// 1. Create Access Token
 	accessToken, err := generateJWTToken(username, accessTokenExpiration, jwtSecret)
@@ -249,6 +293,11 @@ func generateTokenSuite(username string) (*Tokens, error) {
 		Access:  accessToken,
 		Refresh: refreshToken,
 	}, nil
+}
+
+// This needs to be returning something finsih this out
+func setRefreshCookie(c *gin.Context, tokens *Tokens) {
+
 }
 
 // REFRESH FUNCTIONS
@@ -284,6 +333,8 @@ func RefreshHandler(c *gin.Context) {
 	}
 
 	// Generate a new refresh token
+
+	//TODO: This needs to be abstracted
 	newRefreshToken, err := generateJWTToken(claims["sub"].(string), refreshTokenExpiration, refreshSecret)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Failed to generate new refresh token"})
@@ -335,6 +386,7 @@ func ValidateJWT(tokenString string, secret []byte) (dgjwt.MapClaims, error) {
 
 func Signup(c *gin.Context, db *sql.DB) {
 
+	// TODO: we are not using local structs anymore
 	var creds struct {
 		Name     string `json:"username"`
 		Password string `json:"password"`
@@ -352,6 +404,8 @@ func Signup(c *gin.Context, db *sql.DB) {
 		c.JSON(400, gin.H{"error": "Username and password cannot be empty"})
 		return
 	}
+
+	// TODO:abstract this to the database file once created
 	var exists bool
 	// We use 'EXISTS' because it's faster than 'SELECT *'—it stops looking after it finds one match.
 	query := `SELECT EXISTS(SELECT 1 FROM users WHERE name=$1)`
@@ -383,6 +437,8 @@ func Signup(c *gin.Context, db *sql.DB) {
 				log.Println("Panic in queryData:", r)
 			}
 		}()
+
+		// TODO:abstract this out to the datbase file once created
 
 		rows, err := db.Query(`INSERT INTO users (name, password) VALUES ($1, $2)`, creds.Name, creds.Password)
 

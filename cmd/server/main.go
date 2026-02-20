@@ -1,5 +1,7 @@
 package main
 
+// TODO: abstract all of the helper functions to their own db file
+
 import (
 	"database/sql"
 	Myauth "davidbrown/go/Go-Forum-App/cmd/internal/auth"
