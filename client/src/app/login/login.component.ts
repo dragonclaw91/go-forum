@@ -67,10 +67,11 @@ export class LoginComponent implements OnInit {
   }
 
 
-
+//TODO: the signal is not tracking the data 
   onSignIn() {
     const loginData = { username: '', password: '' };
     this.isLoading.set(true);
+    console.log("CHECKING DATA",this.username,this.password)
     this.authService.login(loginData).subscribe({
       next: (response) => {
         this.isLoading.set(false);
@@ -78,6 +79,7 @@ export class LoginComponent implements OnInit {
         // this.router.navigate(['/home']);
       },
       error: (err) => {
+        console.log("ERR",err)
         const msg = err.error?.error || 'an unexpected error occured'
 
         this.errorMessage.set(msg);

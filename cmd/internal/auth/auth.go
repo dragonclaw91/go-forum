@@ -1,10 +1,13 @@
 package Myauth
 
 //TODO: we need to rig up the profile pic endpoint somewhere along the lines
+
+//TODO: Look into GROM it might be a cleaner easier way to handle sql
 import (
 	"bytes"
 	"database/sql"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -44,11 +47,11 @@ type Tokens struct {
 
 // this has everything a user is going to need at the frontend role lives in access token and here
 type User struct {
-	ID           uint   `gorm:"primaryKey"`
-	Username     string `gorm:"uniqueIndex"`
-	PasswordHash string `json:"-"` // This will never be sent to the frontend
-	ProfilePic   string `json:"profile_pic"`
-	Role         string `json:"role"`
+	user_id  uint   `gorm:"primaryKey"`
+	name     string `gorm:"uniqueIndex"`
+	password string `json:"-"` // This will never be sent to the frontend
+	// ProfilePic   string `json:"profile_pic"`
+	// Role         string `json:"role"`
 }
 
 // this will be used when creating a user largely
@@ -63,6 +66,14 @@ type Credentials struct {
 // var Asecret string
 // var tokenStrategy auth.Strategy
 // var cacheObj libcache.Cache
+
+var (
+	ErrUserNameTaken = errors.New("user name is not available")
+	ErrInvalidPass   = errors.New("username or password does not match")
+	ErrDatabaseDown  = errors.New("internal connection error")
+	ErrFailedToken   = errors.New("failed to generate token")
+	ErrBlankFields   = errors.New("Fields can not be blank")
+)
 var strategy union.Union
 var keeper jwt.SecretsKeeper
 
@@ -70,6 +81,7 @@ var keeper jwt.SecretsKeeper
 var accessTokenExpiration = time.Minute * 15     // 15 minutes for access token
 var refreshTokenExpiration = time.Hour * 24 * 30 // 30 days for refresh token
 
+// TODO: Look into this to see if we can clean this up and just use Gin to read and parse
 func Middleware(next gin.HandlerFunc) gin.HandlerFunc {
 
 	//TODO: we moved the logic for the access token to a struct we need to get rid of this
@@ -132,15 +144,64 @@ func SetupGoGuardian() {
 }
 
 // TODO: this needs to be riged up everywhere and tested
-func GetCredientials(c *gin.Context) (*Credentials, error) {
-
+func GetCredientials(c *gin.Context, db *sql.DB) (*Credentials, error) {
+	println("in the GetCredientials")
 	var creds Credentials
+
+	if creds.Name == "" || creds.Password == "" {
+		return nil, ErrBlankFields
+	}
+
 	if err := c.ShouldBindJSON(&creds); err != nil {
 		// return this if we can't parse the data
-		c.JSON(400, gin.H{"error": "Invalid request"})
-		return nil, err
+		// c.JSON(400, gin.H{"error": "Invalid request"})
+		defer func() {
+			if r := recover(); r != nil {
+				log.Println("Panic in queryData:", r)
+			}
+		}()
+		return nil, ErrUserNameTaken
 	} else {
+		fmt.Printf("%+v\n", creds)
 		return &creds, nil
+	}
+
+}
+
+func GetUser(c *gin.Context, db *sql.DB) (*User, error) {
+
+	var user User
+
+	rows, err := db.Query(`SELECT user_id, password, name FROM "users" WHERE name= $1`, user.name)
+
+	if err != nil {
+
+		println(err.Error())
+		log.Fatalf("Query error: %v", err)
+	}
+
+	defer rows.Close()
+	if rows.Next() { // Iterate through the result set
+		err := rows.Scan(&user.password) // Scan the result into the password variable
+		if err != nil {
+			log.Fatalf("Error scanning row: %v", err)
+		}
+	}
+	println("CHECKING RESULT", user.name, user.password)
+
+	if err := c.ShouldBindJSON(&user); err != nil {
+		// return this if we can't parse the data
+		// c.JSON(400, gin.H{"error": "Invalid request"})
+
+		defer func() {
+			if r := recover(); r != nil {
+				log.Println("Panic in queryData:", r)
+			}
+		}()
+		return nil, ErrInvalidPass
+	} else {
+
+		return &user, nil
 	}
 
 }
@@ -149,7 +210,32 @@ func GetCredientials(c *gin.Context) (*Credentials, error) {
 func LoginHandler(c *gin.Context, db *sql.DB) {
 	println("in the LoginHandler")
 
-	creds, err := GetCredientials(c)
+	creds, err := GetCredientials(c, db)
+	if err != nil {
+		// If it's a blank field, we can be specific.
+		if err.Error() == "Fields can not be blank" {
+			c.JSON(400, gin.H{"error": "Please enter both username and password."})
+			return
+		} else {
+			// If it's a technical JSON failure, stay generic.
+			c.JSON(400, gin.H{"error": "The request format is invalid."})
+			return
+		}
+
+	}
+
+	user, err := GetUser(c, db)
+	if err != nil {
+		// If it's a blank field, we can be specific.
+		if err.Error() == "username or password does not match" {
+			c.JSON(400, gin.H{"error": "Username or Password does not match."})
+			return
+		} else {
+			// If it's a technical JSON failure, stay generic.
+			c.JSON(400, gin.H{"error": "The request format is invalid."})
+			return
+		}
+	}
 	// var creds struct {
 	// 	Name     string `json:"username"`
 	// 	Password string `json:"password"`
@@ -166,76 +252,92 @@ func LoginHandler(c *gin.Context, db *sql.DB) {
 	// password := creds.Password
 
 	// TODO: figure out where this needs to live
-	defer func() {
-		if r := recover(); r != nil {
-			log.Println("Panic in queryData:", r)
-		}
-	}()
+	// defer func() {
+	// 	if r := recover(); r != nil {
+	// 		log.Println("Panic in queryData:", r)
+	// 	}
+	// }()
 
-	//TODO: we need to abstact this to another file andr efactor that
+	//TODO: we need to abstact this to another file and refactor that
 
-	rows, err := db.Query(`SELECT password FROM "users" WHERE name= $1`, creds.Name)
+	// rows, err := db.Query(`SELECT password FROM "users" WHERE name= $1`, creds.Name)
 
-	if err != nil {
+	// if err != nil {
 
-		println(err.Error())
-		log.Fatalf("Query error: %v", err)
-	}
+	// 	println(err.Error())
+	// 	log.Fatalf("Query error: %v", err)
+	// }
 
-	defer rows.Close()
-	if rows.Next() { // Iterate through the result set
-		err := rows.Scan(&creds.Password) // Scan the result into the password variable
-		if err != nil {
-			log.Fatalf("Error scanning row: %v", err)
-		}
-	}
-	println("CHECKING RESULT", creds.Name, creds.Password)
+	// defer rows.Close()
+	// if rows.Next() { // Iterate through the result set
+	// 	err := rows.Scan(&creds.Password) // Scan the result into the password variable
+	// 	if err != nil {
+	// 		log.Fatalf("Error scanning row: %v", err)
+	// 	}
+	// }
+	// println("CHECKING RESULT", creds.Name, creds.Password)
 
 	// call validUser to verify username and password
 	// vaildUser is simply going to return true or false dependening if the correct creds were given
 
 	//TODO: we landed on using a struct for this we need to rig it up
-	if validUser(password, creds.Password) {
+	if validUser(user.password, creds.Password) {
 		/*if vaild username and password  generate access and refresh tokens
 		handled by the generate JWTToken function */
 
 		//TODO: this is getting abstracted we need to clean it up
-		accessToken, err := generateJWTToken(creds.Name, accessTokenExpiration, jwtSecret)
-		if err != nil {
-			// if we cant generate a access token return this
-			c.JSON(500, gin.H{"error": "Failed to generate token"})
-			// return
-		}
+		// accessToken, err := generateJWTToken(creds.Name, accessTokenExpiration, jwtSecret)
+
+		// if err != nil {
+		// 	// if we cant generate a access token return this
+		// 	c.JSON(500, gin.H{"error": "Failed to generate token"})
+		// 	// return
+		// }
 
 		//Generate refresh token
 		// Generate secure random JWT secrets for both access and refresh tokens
-		refreshToken, err := generateJWTToken(creds.Name, refreshTokenExpiration, refreshSecret)
-		if err != nil {
-			// if we cant generate a refresh token return this
-			c.JSON(500, gin.H{"error": "Failed to generate refresh token"})
-			// return
-		}
-		println("Setting g the cookie")
-		c.SetCookie(
-			"refresh_token",
-			refreshToken,
-			3600*24*30, // 30 days
-			"/",
-			"",
-			false, // Set to true when you have HTTPS/SSL
-			true,  // The "Pro" flag: HttpOnly
-		)
-		println("Cookie set")
+		// refreshToken, err := generateJWTToken(creds.Name, refreshTokenExpiration, refreshSecret)
+		// if err != nil {
+		// 	// if we cant generate a refresh token return this
+		// 	c.JSON(500, gin.H{"error": "Failed to generate refresh token"})
+		// 	// return
+		// }
+		// println("Setting g the cookie")
+		// c.SetCookie(
+		// 	"refresh_token",
+		// 	refreshToken,
+		// 	3600*24*30, // 30 days
+		// 	"/",
+		// 	"",
+		// 	false, // Set to true when you have HTTPS/SSL
+		// 	true,  // The "Pro" flag: HttpOnly
+		// )
+		// println("Cookie set")
 
 		// Send both tokens to the client
-		c.JSON(200, gin.H{
-			"access_token": accessToken,
-		})
-	} else {
-		c.String(http.StatusUnauthorized, "Invalid username or password. Please try again.")
-		// failing to verfiy username and password return this
+		token, err := generateTokenSuite(user.name)
+		if err != nil {
+			// If it's "No Rows", it's still a 401 (Unauthorized)
+			// For anything else (DB down), use the Server Catch-All
+			c.JSON(500, gin.H{"error": "Internal server error. Please try again later"})
+			return
+		}
 
+		c.JSON(200, gin.H{
+			"access_token": token.Access,
+		})
 	}
+	//  else {
+
+	// 	if err != nil {
+	// 		// if we cant generate a refresh token return this
+	// 		c.JSON(500, gin.H{"error": "Failed to generate refresh token"})
+	// 		// return
+	// 	}
+	// 	c.String(http.StatusUnauthorized, "Invalid username or password. Please try again.")
+	// 	// failing to verfiy username and password return this
+
+	// }
 }
 
 // Validates the username and password (simple example)
@@ -258,7 +360,7 @@ func validUser(hashedPassword, password string) bool {
 // generateJWTToken creates a JWT token with the given expiration and secret
 func generateJWTToken(username string, expiration time.Duration, secret []byte) (string, error) {
 
-	//TODO: we need to add the access tokens to have role and name on them as well
+	//TODO: we need to add the access tokens to have role on this as well
 	// setting the expriation of the token and the username associated with it
 	claims := dgjwt.MapClaims{
 		"sub": username,
