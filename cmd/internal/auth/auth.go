@@ -60,13 +60,6 @@ type Credentials struct {
 	Password string
 }
 
-// var db *sql.DB
-
-// var Rsecret string
-// var Asecret string
-// var tokenStrategy auth.Strategy
-// var cacheObj libcache.Cache
-
 var (
 	ErrUserNameTaken = errors.New("user name is not available")
 	ErrInvalidPass   = errors.New("username or password does not match")
@@ -143,36 +136,34 @@ func SetupGoGuardian() {
 	strategy = union.New(jwtStrategy)
 }
 
-// TODO: this needs to be riged up everywhere and tested
 func GetCredientials(c *gin.Context, db *sql.DB) (*Credentials, error) {
 	println("in the GetCredientials")
 	var creds Credentials
 
-	if creds.Name == "" || creds.Password == "" {
-		return nil, ErrBlankFields
-	}
-
 	if err := c.ShouldBindJSON(&creds); err != nil {
-		// return this if we can't parse the data
-		// c.JSON(400, gin.H{"error": "Invalid request"})
 		defer func() {
 			if r := recover(); r != nil {
 				log.Println("Panic in queryData:", r)
 			}
 		}()
-		return nil, ErrUserNameTaken
+	}
+	if creds.Name == "" || creds.Password == "" {
+		println("Passed ")
+		fmt.Printf("%+v\n", creds)
+		return nil, ErrBlankFields
 	} else {
+
 		fmt.Printf("%+v\n", creds)
 		return &creds, nil
 	}
 
 }
 
-func GetUser(c *gin.Context, db *sql.DB) (*User, error) {
-
+func GetUser(c *gin.Context, db *sql.DB, creds *Credentials) (*User, error) {
 	var user User
+	fmt.Printf("%+v\n", creds.Name)
 
-	rows, err := db.Query(`SELECT user_id, password, name FROM "users" WHERE name= $1`, user.name)
+	rows, err := db.Query(`SELECT user_id, password, name FROM "users" WHERE name= $1`, creds.Name)
 
 	if err != nil {
 
@@ -182,39 +173,24 @@ func GetUser(c *gin.Context, db *sql.DB) (*User, error) {
 
 	defer rows.Close()
 	if rows.Next() { // Iterate through the result set
-		err := rows.Scan(&user.password) // Scan the result into the password variable
+		err := rows.Scan(&user.user_id, &user.password, &user.name) // Scan the result into the user struct
 		if err != nil {
 			log.Fatalf("Error scanning row: %v", err)
 		}
 	}
-	println("CHECKING RESULT", user.name, user.password)
-
-	if err := c.ShouldBindJSON(&user); err != nil {
-		// return this if we can't parse the data
-		// c.JSON(400, gin.H{"error": "Invalid request"})
-
-		defer func() {
-			if r := recover(); r != nil {
-				log.Println("Panic in queryData:", r)
-			}
-		}()
-		return nil, ErrInvalidPass
-	} else {
-
-		return &user, nil
-	}
+	return &user, nil
 
 }
 
 // LoginHandler generates both access and refresh tokens
 func LoginHandler(c *gin.Context, db *sql.DB) {
-	println("in the LoginHandler")
 
 	creds, err := GetCredientials(c, db)
 	if err != nil {
+
 		// If it's a blank field, we can be specific.
 		if err.Error() == "Fields can not be blank" {
-			c.JSON(400, gin.H{"error": "Please enter both username and password."})
+			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		} else {
 			// If it's a technical JSON failure, stay generic.
@@ -224,11 +200,11 @@ func LoginHandler(c *gin.Context, db *sql.DB) {
 
 	}
 
-	user, err := GetUser(c, db)
+	user, err := GetUser(c, db, creds)
 	if err != nil {
 		// If it's a blank field, we can be specific.
 		if err.Error() == "username or password does not match" {
-			c.JSON(400, gin.H{"error": "Username or Password does not match."})
+			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		} else {
 			// If it's a technical JSON failure, stay generic.
@@ -236,85 +212,11 @@ func LoginHandler(c *gin.Context, db *sql.DB) {
 			return
 		}
 	}
-	// var creds struct {
-	// 	Name     string `json:"username"`
-	// 	Password string `json:"password"`
-	// }
 
-	//  parse the incoming JSON request and bind it to the creds struct.
-	// if err := c.ShouldBindJSON(&creds); err != nil {
-	// 	// return this if we can't parse the data
-	// 	c.JSON(400, gin.H{"error": "Invalid request"})
-	// 	return
-	// }
-
-	// name := creds.Name
-	// password := creds.Password
-
-	// TODO: figure out where this needs to live
-	// defer func() {
-	// 	if r := recover(); r != nil {
-	// 		log.Println("Panic in queryData:", r)
-	// 	}
-	// }()
-
-	//TODO: we need to abstact this to another file and refactor that
-
-	// rows, err := db.Query(`SELECT password FROM "users" WHERE name= $1`, creds.Name)
-
-	// if err != nil {
-
-	// 	println(err.Error())
-	// 	log.Fatalf("Query error: %v", err)
-	// }
-
-	// defer rows.Close()
-	// if rows.Next() { // Iterate through the result set
-	// 	err := rows.Scan(&creds.Password) // Scan the result into the password variable
-	// 	if err != nil {
-	// 		log.Fatalf("Error scanning row: %v", err)
-	// 	}
-	// }
-	// println("CHECKING RESULT", creds.Name, creds.Password)
-
-	// call validUser to verify username and password
 	// vaildUser is simply going to return true or false dependening if the correct creds were given
 
-	//TODO: we landed on using a struct for this we need to rig it up
 	if validUser(user.password, creds.Password) {
-		/*if vaild username and password  generate access and refresh tokens
-		handled by the generate JWTToken function */
 
-		//TODO: this is getting abstracted we need to clean it up
-		// accessToken, err := generateJWTToken(creds.Name, accessTokenExpiration, jwtSecret)
-
-		// if err != nil {
-		// 	// if we cant generate a access token return this
-		// 	c.JSON(500, gin.H{"error": "Failed to generate token"})
-		// 	// return
-		// }
-
-		//Generate refresh token
-		// Generate secure random JWT secrets for both access and refresh tokens
-		// refreshToken, err := generateJWTToken(creds.Name, refreshTokenExpiration, refreshSecret)
-		// if err != nil {
-		// 	// if we cant generate a refresh token return this
-		// 	c.JSON(500, gin.H{"error": "Failed to generate refresh token"})
-		// 	// return
-		// }
-		// println("Setting g the cookie")
-		// c.SetCookie(
-		// 	"refresh_token",
-		// 	refreshToken,
-		// 	3600*24*30, // 30 days
-		// 	"/",
-		// 	"",
-		// 	false, // Set to true when you have HTTPS/SSL
-		// 	true,  // The "Pro" flag: HttpOnly
-		// )
-		// println("Cookie set")
-
-		// Send both tokens to the client
 		token, err := generateTokenSuite(user.name)
 		if err != nil {
 			// If it's "No Rows", it's still a 401 (Unauthorized)
@@ -327,17 +229,6 @@ func LoginHandler(c *gin.Context, db *sql.DB) {
 			"access_token": token.Access,
 		})
 	}
-	//  else {
-
-	// 	if err != nil {
-	// 		// if we cant generate a refresh token return this
-	// 		c.JSON(500, gin.H{"error": "Failed to generate refresh token"})
-	// 		// return
-	// 	}
-	// 	c.String(http.StatusUnauthorized, "Invalid username or password. Please try again.")
-	// 	// failing to verfiy username and password return this
-
-	// }
 }
 
 // Validates the username and password (simple example)

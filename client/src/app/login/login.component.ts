@@ -69,9 +69,9 @@ export class LoginComponent implements OnInit {
 
 //TODO: the signal is not tracking the data 
   onSignIn() {
-    const loginData = { username: '', password: '' };
+    const loginData = { name: this.username(), password: this.password()};
+    console.log("login data",loginData.name)
     this.isLoading.set(true);
-    console.log("CHECKING DATA",this.username,this.password)
     this.authService.login(loginData).subscribe({
       next: (response) => {
         this.isLoading.set(false);

@@ -11,8 +11,8 @@ export class AuthService {
     private apiUrl = 'http://localhost:5000/v1/auth/login' // Your Go endpoint
 
     constructor(private http: HttpClient,
-                private userService: UserService
-                ) { }
+        private userService: UserService
+    ) { }
 
 
     login(credentials: any): Observable<any> {
@@ -23,12 +23,12 @@ export class AuthService {
                 //similar to a hook used to manage side effects
                 if (response && response.access_token) {
                     localStorage.setItem('access_token', response.access_token)
-// 2. Now call the Sibling Service directly
-      this.userService.getUserSettings().subscribe({
-        next: (userData) => {
-          console.log("Token verified! User is:", userData);
-        }
-      });
+                    // 2. Now call the Sibling Service directly
+                    this.userService.getUserSettings().subscribe({
+                        next: (userData) => {
+                            console.log("Token verified! User is:", userData);
+                        }
+                    });
                     this.userService
                     console.log('Access Token saved to LocalStorage')
                 }

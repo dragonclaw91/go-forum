@@ -5,6 +5,7 @@ package main
 import (
 	"database/sql"
 	Myauth "davidbrown/go/Go-Forum-App/cmd/internal/auth"
+	"davidbrown/go/Go-Forum-App/cmd/internal/repository"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -535,27 +536,38 @@ func putHelper(c *gin.Context) {
 	}
 }
 
-func init() {
+// func init() {
 
-	var err error
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
-	db, err = sql.Open("postgres", psqlInfo)
+// 	var err error
+// 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+// 		"password=%s dbname=%s sslmode=disable",
+// 		host, port, user, password, dbname)
+// 	db, err = sql.Open("postgres", psqlInfo)
 
-	if err != nil {
-		panic(err)
-	}
-	// defer db.Close()
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	// defer db.Close()
 
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-}
+// 	err = db.Ping()
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// }
 
 func main() {
 
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
+	err := repository.InitDB(psqlInfo)
+
+	if err != nil {
+		// We use log.Fatal because if the DB is down, the app is useless
+		log.Fatalf("Could not connect to database: %v", err)
+	}
+
+	log.Println("Database connection established!")
 	Myauth.SetupGoGuardian()
 
 	router := gin.Default()
