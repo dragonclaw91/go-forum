@@ -592,7 +592,7 @@ func main() {
 	router.POST("/v1/replies/create", Myauth.Middleware(createReply))
 	router.POST("/v1/vote/create", Myauth.Middleware(createVote))
 	router.POST("/v1/auth/login", func(c *gin.Context) {
-
+		println("SHOULD BE THE FIRST STEP")
 		c.Set("request", c.Request)
 		Myauth.LoginHandler(c, db)
 

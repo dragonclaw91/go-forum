@@ -6,6 +6,7 @@ package Myauth
 import (
 	"bytes"
 	"database/sql"
+	"davidbrown/go/Go-Forum-App/cmd/internal/repository"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -25,6 +26,7 @@ import (
 	dgjwt "github.com/golang-jwt/jwt"
 
 	// "github.com/google/uuid"
+
 	_ "github.com/lib/pq"
 	"github.com/shaj13/go-guardian/v2/auth/strategies/jwt"
 	"github.com/shaj13/go-guardian/v2/auth/strategies/union"
@@ -47,9 +49,9 @@ type Tokens struct {
 
 // this has everything a user is going to need at the frontend role lives in access token and here
 type User struct {
-	user_id  uint   `gorm:"primaryKey"`
-	name     string `gorm:"uniqueIndex"`
-	password string `json:"-"` // This will never be sent to the frontend
+	user_id  int
+	name     string
+	password string // This will never be sent to the frontend
 	// ProfilePic   string `json:"profile_pic"`
 	// Role         string `json:"role"`
 }
@@ -161,30 +163,33 @@ func GetCredientials(c *gin.Context, db *sql.DB) (*Credentials, error) {
 
 func GetUser(c *gin.Context, db *sql.DB, creds *Credentials) (*User, error) {
 	var user User
+	println("ATTEMPTING TO GET USER")
 	fmt.Printf("%+v\n", creds.Name)
 
-	rows, err := db.Query(`SELECT user_id, password, name FROM "users" WHERE name= $1`, creds.Name)
+	result := repository.GetUser(creds.Name, c)
+	println("FAILED")
+	// rows, err := db.Query(`SELECT user_id, password, name FROM "users" WHERE name= $1`, creds.Name)
+	fmt.Printf("%+v result\n", result)
+	// if err != nil {
 
-	if err != nil {
+	// 	println(err.Error())
+	// 	log.Fatalf("Query error: %v", err)
+	// }
 
-		println(err.Error())
-		log.Fatalf("Query error: %v", err)
-	}
-
-	defer rows.Close()
-	if rows.Next() { // Iterate through the result set
-		err := rows.Scan(&user.user_id, &user.password, &user.name) // Scan the result into the user struct
-		if err != nil {
-			log.Fatalf("Error scanning row: %v", err)
-		}
-	}
+	// defer rows.Close()
+	// if rows.Next() { // Iterate through the result set
+	// 	err := rows.Scan(&user.user_id, &user.password, &user.name) // Scan the result into the user struct
+	// 	if err != nil {
+	// 		log.Fatalf("Error scanning row: %v", err)
+	// 	}
+	// }
 	return &user, nil
 
 }
 
 // LoginHandler generates both access and refresh tokens
 func LoginHandler(c *gin.Context, db *sql.DB) {
-
+	println("TOP OF FUNCTION")
 	creds, err := GetCredientials(c, db)
 	if err != nil {
 
@@ -199,7 +204,7 @@ func LoginHandler(c *gin.Context, db *sql.DB) {
 		}
 
 	}
-
+	println("ABOUT TO GET USER")
 	user, err := GetUser(c, db, creds)
 	if err != nil {
 		// If it's a blank field, we can be specific.
@@ -215,24 +220,38 @@ func LoginHandler(c *gin.Context, db *sql.DB) {
 
 	// vaildUser is simply going to return true or false dependening if the correct creds were given
 
-	if validUser(user.password, creds.Password) {
-
-		token, err := generateTokenSuite(user.name)
-		if err != nil {
-			// If it's "No Rows", it's still a 401 (Unauthorized)
-			// For anything else (DB down), use the Server Catch-All
-			c.JSON(500, gin.H{"error": "Internal server error. Please try again later"})
+	err = validUser(user.password, creds.Password)
+	if err != nil {
+		if err.Error() == "username or password does not match" {
+			println("MADE IT YO")
+			c.JSON(400, gin.H{"error": err.Error()})
+			return
+		} else {
+			// If it's a technical JSON failure, stay generic.
+			c.JSON(400, gin.H{"error": "The request format is invalid."})
 			return
 		}
-
-		c.JSON(200, gin.H{
-			"access_token": token.Access,
-		})
 	}
+
+	token, err := generateTokenSuite(user.name)
+
+	// if err != nil {
+	// 	// If it's "No Rows", it's still a 401 (Unauthorized)
+	// 	// For anything else (DB down), use the Server Catch-All
+	// 	c.JSON(500, gin.H{"error": "Internal server error. Please try again later"})
+	// 	return
+	// }
+
+	c.JSON(200, gin.H{
+		"access_token": token.Access,
+	})
+	// } else {
+	// 	println("FALSEY")
+	// }
 }
 
 // Validates the username and password (simple example)
-func validUser(hashedPassword, password string) bool {
+func validUser(hashedPassword, password string) error {
 	fmt.Printf("DEBUG: Hashed from DB: %q\n", hashedPassword)
 	fmt.Printf("DEBUG: Plain from User: %q\n", password)
 
@@ -240,11 +259,12 @@ func validUser(hashedPassword, password string) bool {
 	if err != nil {
 		// Password doesn't match
 		fmt.Println("Incorrect password")
-		return false
+		return ErrInvalidPass
 	} else {
 		// Password matches
 		fmt.Println("Password match!")
-		return true
+		return nil
+
 	}
 }
 

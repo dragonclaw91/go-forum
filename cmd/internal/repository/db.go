@@ -22,7 +22,7 @@ func InitDB(psqlInfo string) error {
 	// 	host, port, user, password, dbname)
 	// db, err = sql.Open("postgres", psqlInfo)
 	db, err = gorm.Open(postgres.Open(psqlInfo), &gorm.Config{})
-
+	db = db.Debug()
 	// if err != nil {
 	// 	panic(err)
 	// }
