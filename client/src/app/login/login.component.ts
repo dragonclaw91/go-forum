@@ -30,7 +30,7 @@ export class LoginComponent implements OnInit {
   ngOnInit(): void {
     console.log('Component is now on the DOM!');
   }
-
+  hidePassword = signal(false)
   isLoginMode = signal(true);
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
@@ -47,6 +47,10 @@ export class LoginComponent implements OnInit {
     this.errorMessage.set(null);
     this.errorLabel.set(false)
   }
+
+togglePassword(){
+  this.hidePassword.update(v => !v)
+}
 
   toggleMode() {
     this.isLoginMode.update(v => !v);
@@ -67,10 +71,10 @@ export class LoginComponent implements OnInit {
   }
 
 
-//TODO: the signal is not tracking the data 
+
   onSignIn() {
-    const loginData = { name: this.username(), password: this.password()};
-    console.log("login data",loginData.name)
+    const loginData = { name: this.username(), password: this.password() };
+    console.log("login data", loginData.name)
     this.isLoading.set(true);
     this.authService.login(loginData).subscribe({
       next: (response) => {
@@ -79,7 +83,41 @@ export class LoginComponent implements OnInit {
         // this.router.navigate(['/home']);
       },
       error: (err) => {
-        console.log("ERR",err)
+        console.log("ERR", err)
+        const msg = err.error?.error || 'an unexpected error occured'
+
+        this.errorMessage.set(msg);
+
+        /* Kill the old timer
+          if we dont problems will happen when users
+          try to submit again before the error clears */
+        if (this.errorTimer) clearTimeout(this.errorTimer);
+
+        const isMobile = window.innerWidth < 1000;
+
+        if (isMobile) {
+          this.errorTimer = setTimeout(() => this.errorMessage.set(null), 5000);
+        }
+
+        this.isLoading.set(false);
+        this.triggerShake();
+      }
+    });
+  }
+
+  onSignUp() {
+    console.log("WE are in the sign up function")
+    const loginData = { name: this.username(), password: this.password() };
+    console.log("login data", loginData.password)
+    this.isLoading.set(true);
+    this.authService.login(loginData).subscribe({
+      next: (response) => {
+        this.isLoading.set(false);
+        console.log('Login Successful!', response);
+        // this.router.navigate(['/home']);
+      },
+      error: (err) => {
+        console.log("ERR", err)
         const msg = err.error?.error || 'an unexpected error occured'
 
         this.errorMessage.set(msg);

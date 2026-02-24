@@ -10,6 +10,7 @@ export class UserService {
 
   // This is the "Protected" request we discussed
   getUserSettings() {
+    console.log("CHECK IF WE ARE HERE")
     const token = localStorage.getItem('access_token');
     
     return this.http.get('http://localhost:8080/user/settings', {

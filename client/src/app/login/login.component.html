@@ -17,35 +17,46 @@
           </div>
           }
 
-          <form (ngSubmit)="onSignIn()" class="d-flex flex-column flex-grow-1 justify-content-around">
+          <form (ngSubmit)="isLoginMode() ? onSignIn() : onSignUp()"
+            class="d-flex flex-column flex-grow-1 justify-content-around">
             <div class="mb-3">
-              <label  class="form-label label-wrapper " [class.has-error]="errorLabel()">Username</label>
+              <label class="form-label label-wrapper " [class.has-error]="errorLabel()">Username</label>
               <input type="username" name="uesrname" class="form-control form-control-lg py-3" placeholder="username"
                 [(ngModel)]="username" (input)="onInputClear()">
             </div>
 
             <div class="mb-3">
-              <label class="form-label label-wrapper" [class.has-error]="errorLabel()">Password</label>
-              <input type="password" name="password" class="form-control form-control-lg py-3" [(ngModel)]="password" (input)="onInputClear()">
-            </div>
-
-            <div class="d-grid gap-2 mt-4">
-              <button type="submit" class="btn  btn-lg w-100 py-3 fw-bold btn-color" [disabled]="isLoading()">
-                @if (isLoading()) {
-                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                Loading...
-                } @else {
-                {{ submitLabel() }}
-                }
+         
+            <label class="form-label label-wrapper" [class.has-error]="errorLabel()">Password</label>
+            <div class="signup">
+            <input [type]="hidePassword() ? 'text' : 'password'" name="password" class="form-control form-control-lg py-3" [(ngModel)]="password"
+              (input)="onInputClear()">
+                   @if (isLoginMode() == false) {
+    
+              <button type="button" (click)="togglePassword()">
+                {{ hidePassword() ? '👁️' : '🙈' }}
               </button>
-
-              <button type="button" class="btn btn-link btn-sm" (click)="toggleMode()">
-                {{ isLoginMode() ? 'Don\'t have an account? Register' : 'Already have an account? Login' }}
-              </button>
+            }
             </div>
-          </form>
-
         </div>
+
+        <div class="d-grid gap-2 mt-4">
+          <button type="submit" class="btn  btn-lg w-100 py-3 fw-bold btn-color" [disabled]="isLoading()">
+            @if (isLoading()) {
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+            Loading...
+            } @else {
+            {{ submitLabel() }}
+            }
+          </button>
+
+          <button type="button" class="btn btn-link btn-sm" (click)="toggleMode()">
+            {{ isLoginMode() ? 'Don\'t have an account? Register' : 'Already have an account? Login' }}
+          </button>
+        </div>
+        </form>
+
       </div>
     </div>
   </div>
+</div>
