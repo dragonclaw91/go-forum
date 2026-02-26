@@ -6,9 +6,10 @@ package Myauth
 import (
 	"bytes"
 	"database/sql"
+	"davidbrown/go/Go-Forum-App/cmd/internal/apperrs"
+	"davidbrown/go/Go-Forum-App/cmd/internal/models"
 	"davidbrown/go/Go-Forum-App/cmd/internal/repository"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -46,18 +47,20 @@ type Tokens struct {
 }
 
 // this will be used when creating a user largely
-type Credentials struct {
-	Name     string
-	Password string
-}
+// type Credentials struct {
+// 	Name     string
+// 	Password string
+// }
 
-var (
-	ErrUserNameTaken = errors.New("user name is not available")
-	ErrInvalidPass   = errors.New("username or password does not match")
-	ErrDatabaseDown  = errors.New("internal connection error")
-	ErrFailedToken   = errors.New("failed to generate token")
-	ErrBlankFields   = errors.New("Fields can not be blank")
-)
+// var (
+//
+//	ErrUserNameTaken = errors.New("user name is not available")
+//	ErrInvalidPass   = errors.New("username or password does not match")
+//	ErrDatabaseDown  = errors.New("internal connection error")
+//	ErrFailedToken   = errors.New("failed to generate token")
+//	ErrBlankFields   = errors.New("Fields can not be blank")
+//
+// )
 var strategy union.Union
 var keeper jwt.SecretsKeeper
 
@@ -127,9 +130,9 @@ func SetupGoGuardian() {
 	strategy = union.New(jwtStrategy)
 }
 
-func GetCredientials(c *gin.Context, db *sql.DB) (*Credentials, error) {
+func GetCredientials(c *gin.Context, db *sql.DB) (*models.Creds, error) {
 	println("in the GetCredientials")
-	var creds Credentials
+	var creds models.Creds
 
 	if err := c.ShouldBindJSON(&creds); err != nil {
 		defer func() {
@@ -141,7 +144,7 @@ func GetCredientials(c *gin.Context, db *sql.DB) (*Credentials, error) {
 	if creds.Name == "" || creds.Password == "" {
 		println("Passed ")
 		fmt.Printf("%+v\n", creds)
-		return nil, ErrBlankFields
+		return nil, apperrs.ErrBlankFields
 	} else {
 
 		fmt.Printf("%+v\n", creds)
@@ -150,12 +153,12 @@ func GetCredientials(c *gin.Context, db *sql.DB) (*Credentials, error) {
 
 }
 
-func GetUser(c *gin.Context, db *sql.DB, creds *Credentials) (*repository.User, error) {
+func GetUser(c *gin.Context, db *sql.DB, creds *models.Creds) (*repository.User, error) {
 
 	result, err := repository.GetUser(creds.Name, c)
 
 	if err != nil {
-		return nil, ErrInvalidPass
+		return nil, apperrs.ErrInvalidPass
 	}
 
 	return result, nil
@@ -173,7 +176,7 @@ func LoginHandler(c *gin.Context, db *sql.DB) {
 			return
 		} else {
 			// If it's a technical JSON failure, stay generic.
-			c.JSON(400, gin.H{"error": "The request format is invalid."})
+			c.JSON(400, gin.H{"error": apperrs.Errgeneric.Error()})
 			return
 		}
 
@@ -189,7 +192,7 @@ func LoginHandler(c *gin.Context, db *sql.DB) {
 			return
 		} else {
 			// If it's a technical JSON failure, stay generic.
-			c.JSON(400, gin.H{"error": "The request format is invalid."})
+			c.JSON(400, gin.H{"error": apperrs.Errgeneric.Error()})
 			return
 		}
 	}
@@ -203,7 +206,7 @@ func LoginHandler(c *gin.Context, db *sql.DB) {
 			return
 		} else {
 			// If it's a technical JSON failure, stay generic.
-			c.JSON(400, gin.H{"error": "The request format is invalid."})
+			c.JSON(400, gin.H{"error": apperrs.Errgeneric.Error()})
 			return
 		}
 	}
@@ -222,7 +225,7 @@ func validUser(hashedPassword, password string) error {
 	if err != nil {
 		// Password doesn't match
 		fmt.Println("Incorrect password")
-		return ErrInvalidPass
+		return apperrs.ErrInvalidPass
 	} else {
 		// Password matches
 		fmt.Println("Password match!")
@@ -362,74 +365,72 @@ func ValidateJWT(tokenString string, secret []byte) (dgjwt.MapClaims, error) {
 
 func Signup(c *gin.Context, db *sql.DB) {
 
-	// TODO: we are not using local structs anymore
-	var creds struct {
-		Name     string `json:"username"`
-		Password string `json:"password"`
-	}
+	var creds *models.Creds
 
 	//  parse the incoming JSON request and bind it to the creds struct.
 	if err := c.ShouldBindJSON(&creds); err != nil {
 
 		// return this if we can't parse the data or more likley the field was left blank
-		c.JSON(400, gin.H{"error": "All fields are required!"})
+		c.JSON(400, gin.H{"error": apperrs.ErrBlankFields.Error()})
 		return
 	}
 	// Checking for blank sapces to ensure some can't just bypass the form
 	if strings.TrimSpace(creds.Name) == "" || strings.TrimSpace(creds.Password) == "" {
-		c.JSON(400, gin.H{"error": "Username and password cannot be empty"})
+		c.JSON(400, gin.H{"error": apperrs.ErrBlankFields.Error()})
 		return
 	}
+
+	result, err = repository.InsertUser(&models.Creds)
 
 	// TODO:abstract this to the database file once created
-	var exists bool
-	// We use 'EXISTS' because it's faster than 'SELECT *'—it stops looking after it finds one match.
-	query := `SELECT EXISTS(SELECT 1 FROM users WHERE name=$1)`
-	creds.Name = strings.TrimSpace(creds.Name)
+	// var exists bool
+	// // We use 'EXISTS' because it's faster than 'SELECT *'—it stops looking after it finds one match.
+	// query := `SELECT EXISTS(SELECT 1 FROM users WHERE name=$1)`
+	// creds.Name = strings.TrimSpace(creds.Name)
 
-	err := db.QueryRow(query, creds.Name).Scan(&exists)
-	if err != nil {
-		fmt.Println("Database check failed:", err)
-		c.JSON(500, gin.H{"error": "Internal server error"})
-		return
-	}
+	// err := db.QueryRow(query, creds.Name).Scan(&exists)
+	// if err != nil {
+	// 	fmt.Println("Database check failed:", err)
+	// 	c.JSON(500, gin.H{"error": "Internal server error"})
+	// 	return
+	// }
 
-	if exists {
-		fmt.Printf("Blocked: User %s already exists\n", creds.Name)
-		c.JSON(400, gin.H{"error": "Username is already taken"})
-		return
-	}
-	creds.Password = hashPassword(creds.Password)
-	if creds.Password == "Error Hashing" {
-		data := gin.H{
-			"message": "There was a problem",
-		}
-		c.JSON(http.StatusOK, data)
-	} else {
-		fmt.Printf("No Error: %+v\n", creds)
+	// if exists {
+	// 	fmt.Printf("Blocked: User %s already exists\n", creds.Name)
+	// 	c.JSON(400, gin.H{"error": "Username is already taken"})
+	// 	return
+	// }
+	// creds.Password = hashPassword(creds.Password)
+	// if creds.Password == "Error Hashing" {
+	// 	data := gin.H{
+	// 		"message": "There was a problem",
+	// 	}
+	// 	c.JSON(http.StatusOK, data)
+	// } else {
+	// 	fmt.Printf("No Error: %+v\n", creds)
 
-		defer func() {
-			if r := recover(); r != nil {
-				log.Println("Panic in queryData:", r)
-			}
-		}()
+	// 	defer func() {
+	// 		if r := recover(); r != nil {
+	// 			log.Println("Panic in queryData:", r)
+	// 		}
+	// 	}()
 
-		// TODO:abstract this out to the datbase file once created
+	// 	// TODO:abstract this out to the datbase file once created
 
-		rows, err := db.Query(`INSERT INTO users (name, password) VALUES ($1, $2)`, creds.Name, creds.Password)
+	// 	rows, err := db.Query(`INSERT INTO users (name, password) VALUES ($1, $2)`, creds.Name, creds.Password)
 
-		if err != nil {
+	// 	if err != nil {
 
-			println(err.Error())
-			log.Fatalf("Query error: %v", err)
-		}
+	// 		println(err.Error())
+	// 		log.Fatalf("Query error: %v", err)
+	// 	}
 
-		defer rows.Close()
-		// Respond with success message or status
-		c.JSON(200, gin.H{"message": "User created successfully",
-			"User": creds.Name,
-		})
-	}
+	// 	defer rows.Close()
+	// 	// Respond with success message or status
+	// 	c.JSON(200, gin.H{"message": "User created successfully",
+	// 		"User": creds.Name,
+	// 	})
+	// }
 }
 
 func hashPassword(password string) string {
