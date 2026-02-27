@@ -46,21 +46,6 @@ type Tokens struct {
 	Refresh string `json:"refresh_token"`
 }
 
-// this will be used when creating a user largely
-// type Credentials struct {
-// 	Name     string
-// 	Password string
-// }
-
-// var (
-//
-//	ErrUserNameTaken = errors.New("user name is not available")
-//	ErrInvalidPass   = errors.New("username or password does not match")
-//	ErrDatabaseDown  = errors.New("internal connection error")
-//	ErrFailedToken   = errors.New("failed to generate token")
-//	ErrBlankFields   = errors.New("Fields can not be blank")
-//
-// )
 var strategy union.Union
 var keeper jwt.SecretsKeeper
 
@@ -99,7 +84,8 @@ func Middleware(next gin.HandlerFunc) gin.HandlerFunc {
 		// Parse JSON body into the requestData struct
 		if err := c.ShouldBindJSON(&requestData); err != nil {
 			// If there’s an error unmarshalling, respond with an error
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
+			log.Printf("Failed to unmarshall the data: %v", err)
+			c.JSON(500, gin.H{"error": apperrs.Errgeneric})
 			return
 		}
 		// Print  access_token
@@ -135,25 +121,21 @@ func GetCredientials(c *gin.Context, db *sql.DB) (*models.Creds, error) {
 	var creds models.Creds
 
 	if err := c.ShouldBindJSON(&creds); err != nil {
-		defer func() {
-			if r := recover(); r != nil {
-				log.Println("Panic in queryData:", r)
-			}
-		}()
+		log.Printf("Failed to Bind in the get credientials : %v", err)
+		c.JSON(500, gin.H{"error": apperrs.Errgeneric})
 	}
 	if creds.Name == "" || creds.Password == "" {
 		println("Passed ")
 		fmt.Printf("%+v\n", creds)
 		return nil, apperrs.ErrBlankFields
 	} else {
-
 		fmt.Printf("%+v\n", creds)
 		return &creds, nil
 	}
 
 }
 
-func GetUser(c *gin.Context, db *sql.DB, creds *models.Creds) (*repository.User, error) {
+func GetUser(c *gin.Context, db *sql.DB, creds *models.Creds) (*models.User, error) {
 
 	result, err := repository.GetUser(creds.Name, c)
 
@@ -275,8 +257,16 @@ func generateTokenSuite(username string) (*Tokens, error) {
 }
 
 // This needs to be returning something finsih this out
-func setRefreshCookie(c *gin.Context, tokens *Tokens) {
-
+func setRefreshCookie(c *gin.Context, newRefreshToken string) {
+	c.SetCookie(
+		"refresh_token",
+		newRefreshToken,
+		3600*24*30, // 30 days
+		"/",
+		"",
+		false, // Set to true when you have HTTPS/SSL
+		true,  // The "Pro" flag: HttpOnly
+	)
 }
 
 // REFRESH FUNCTIONS
@@ -293,7 +283,7 @@ func RefreshHandler(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		// if we can't parse the json return this
 		log.Printf("Error binding JSON: %v", err)
-		c.JSON(400, gin.H{"error": "Invalid request"})
+		c.JSON(500, gin.H{"error": apperrs.Errgeneric})
 		return
 	}
 
@@ -301,34 +291,27 @@ func RefreshHandler(c *gin.Context) {
 	claims, err := ValidateJWT(req.RefreshToken, refreshSecret)
 	// println("ERRR", err.Error())
 	if err != nil {
-		c.JSON(401, gin.H{"error": "Invalid refresh token again"})
+		log.Printf("Invalid refresh token again : %v", err)
+		c.JSON(500, gin.H{"error": apperrs.Errgeneric})
 		return
 	}
 	// Generate a new access token if the refresh token is valid
 	accessToken, err := generateJWTToken(claims["sub"].(string), accessTokenExpiration, jwtSecret)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "Failed to generate new access token"})
+		log.Printf("Failed to generate new access token: %v", err)
+		c.JSON(500, gin.H{"error": apperrs.Errgeneric})
 		return
 	}
 
 	// Generate a new refresh token
-
-	//TODO: This needs to be abstracted
 	newRefreshToken, err := generateJWTToken(claims["sub"].(string), refreshTokenExpiration, refreshSecret)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "Failed to generate new refresh token"})
+		log.Printf("Failed to generate new refresh token: %v", err)
+		c.JSON(500, gin.H{"error": apperrs.Errgeneric})
 		return
 	}
 
-	c.SetCookie(
-		"refresh_token",
-		newRefreshToken,
-		3600*24*30, // 30 days
-		"/",
-		"",
-		false, // Set to true when you have HTTPS/SSL
-		true,  // The "Pro" flag: HttpOnly
-	)
+	setRefreshCookie(c, newRefreshToken)
 
 	// Return the new access token
 	c.JSON(200, gin.H{
@@ -350,7 +333,9 @@ func ValidateJWT(tokenString string, secret []byte) (dgjwt.MapClaims, error) {
 		println("ERROR", err.Error())
 		log.Printf("Invalid JWT token: %v", token)
 		// if the signature can't be verifed return this
-		return nil, fmt.Errorf("invalid token")
+		// return nil, fmt.Errorf("invalid token")
+		return nil, err
+
 	}
 	// create the claims
 	claims, ok := token.Claims.(dgjwt.MapClaims)
@@ -369,77 +354,50 @@ func Signup(c *gin.Context, db *sql.DB) {
 
 	//  parse the incoming JSON request and bind it to the creds struct.
 	if err := c.ShouldBindJSON(&creds); err != nil {
-
 		// return this if we can't parse the data or more likley the field was left blank
 		c.JSON(400, gin.H{"error": apperrs.ErrBlankFields.Error()})
 		return
 	}
 	// Checking for blank sapces to ensure some can't just bypass the form
 	if strings.TrimSpace(creds.Name) == "" || strings.TrimSpace(creds.Password) == "" {
+		println("FAiling here")
+		println(creds.Password)
 		c.JSON(400, gin.H{"error": apperrs.ErrBlankFields.Error()})
 		return
 	}
 
-	result, err = repository.InsertUser(&models.Creds)
+	err := repository.CheckUserExists(c, creds.Name)
 
-	// TODO:abstract this to the database file once created
-	// var exists bool
-	// // We use 'EXISTS' because it's faster than 'SELECT *'—it stops looking after it finds one match.
-	// query := `SELECT EXISTS(SELECT 1 FROM users WHERE name=$1)`
-	// creds.Name = strings.TrimSpace(creds.Name)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err})
+		return
+	}
 
-	// err := db.QueryRow(query, creds.Name).Scan(&exists)
-	// if err != nil {
-	// 	fmt.Println("Database check failed:", err)
-	// 	c.JSON(500, gin.H{"error": "Internal server error"})
-	// 	return
-	// }
+	HashedPassword, err := hashPassword(creds.Password)
 
-	// if exists {
-	// 	fmt.Printf("Blocked: User %s already exists\n", creds.Name)
-	// 	c.JSON(400, gin.H{"error": "Username is already taken"})
-	// 	return
-	// }
-	// creds.Password = hashPassword(creds.Password)
-	// if creds.Password == "Error Hashing" {
-	// 	data := gin.H{
-	// 		"message": "There was a problem",
-	// 	}
-	// 	c.JSON(http.StatusOK, data)
-	// } else {
-	// 	fmt.Printf("No Error: %+v\n", creds)
+	if err != nil {
+		log.Printf("Failed to hash the password : %v", err)
+		c.JSON(500, gin.H{"error": apperrs.Errgeneric})
+		return
+	}
 
-	// 	defer func() {
-	// 		if r := recover(); r != nil {
-	// 			log.Println("Panic in queryData:", r)
-	// 		}
-	// 	}()
+	err = repository.InsertUser(c, creds.Name, HashedPassword)
 
-	// 	// TODO:abstract this out to the datbase file once created
+	if err != nil {
+		log.Printf("Failed to Insert the user : %v", err)
+		c.JSON(500, gin.H{"error": apperrs.Errgeneric})
+	} else {
+		c.JSON(200, gin.H{"message": "User created successfully"})
+	}
 
-	// 	rows, err := db.Query(`INSERT INTO users (name, password) VALUES ($1, $2)`, creds.Name, creds.Password)
-
-	// 	if err != nil {
-
-	// 		println(err.Error())
-	// 		log.Fatalf("Query error: %v", err)
-	// 	}
-
-	// 	defer rows.Close()
-	// 	// Respond with success message or status
-	// 	c.JSON(200, gin.H{"message": "User created successfully",
-	// 		"User": creds.Name,
-	// 	})
-	// }
 }
 
-func hashPassword(password string) string {
-	println("Pre Hash", password)
+func hashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 10)
 	if err == nil {
-		return string(bytes)
+		return string(bytes), nil
 	} else {
 		println("ERROR", err)
-		return "Error Hashing"
+		return "", err
 	}
 }
