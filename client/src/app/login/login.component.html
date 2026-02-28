@@ -17,7 +17,7 @@
           </div>
           }
 
-          <form (ngSubmit)="isLoginMode() ? onSignIn() : onSignUp()"
+          <form (ngSubmit)="onSignIn()"
             class="d-flex flex-column flex-grow-1 justify-content-around">
             <div class="mb-3">
               <label class="form-label label-wrapper " [class.has-error]="errorLabel()">Username</label>
@@ -46,7 +46,7 @@
             <span class="spinner-border spinner-border-sm me-2" role="status"></span>
             Loading...
             } @else {
-            {{ submitLabel() }}
+            {{ authState().label }}
             }
           </button>
 

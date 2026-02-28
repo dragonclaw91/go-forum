@@ -598,7 +598,7 @@ func main() {
 
 	})
 	router.POST("/v1/auth/refresh", Myauth.RefreshHandler)
-	router.POST("v1/signup", func(c *gin.Context) {
+	router.POST("v1/auth/signup", func(c *gin.Context) {
 		c.Set("request", c.Request)
 		Myauth.Signup(c, db)
 	})

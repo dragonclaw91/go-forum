@@ -9,6 +9,6 @@ type User struct {
 }
 
 type Creds struct {
-	Name     string `json:"username"`
+	Name     string `json:"name"`
 	Password string `json:"password"`
 }

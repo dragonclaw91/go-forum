@@ -85,7 +85,7 @@ func Middleware(next gin.HandlerFunc) gin.HandlerFunc {
 		if err := c.ShouldBindJSON(&requestData); err != nil {
 			// If there’s an error unmarshalling, respond with an error
 			log.Printf("Failed to unmarshall the data: %v", err)
-			c.JSON(500, gin.H{"error": apperrs.Errgeneric})
+			c.JSON(500, gin.H{"error": apperrs.Errgeneric.Error()})
 			return
 		}
 		// Print  access_token
@@ -122,7 +122,7 @@ func GetCredientials(c *gin.Context, db *sql.DB) (*models.Creds, error) {
 
 	if err := c.ShouldBindJSON(&creds); err != nil {
 		log.Printf("Failed to Bind in the get credientials : %v", err)
-		c.JSON(500, gin.H{"error": apperrs.Errgeneric})
+		c.JSON(500, gin.H{"error": apperrs.Errgeneric.Error()})
 	}
 	if creds.Name == "" || creds.Password == "" {
 		println("Passed ")
@@ -283,7 +283,7 @@ func RefreshHandler(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		// if we can't parse the json return this
 		log.Printf("Error binding JSON: %v", err)
-		c.JSON(500, gin.H{"error": apperrs.Errgeneric})
+		c.JSON(500, gin.H{"error": apperrs.Errgeneric.Error()})
 		return
 	}
 
@@ -292,14 +292,14 @@ func RefreshHandler(c *gin.Context) {
 	// println("ERRR", err.Error())
 	if err != nil {
 		log.Printf("Invalid refresh token again : %v", err)
-		c.JSON(500, gin.H{"error": apperrs.Errgeneric})
+		c.JSON(500, gin.H{"error": apperrs.Errgeneric.Error()})
 		return
 	}
 	// Generate a new access token if the refresh token is valid
 	accessToken, err := generateJWTToken(claims["sub"].(string), accessTokenExpiration, jwtSecret)
 	if err != nil {
 		log.Printf("Failed to generate new access token: %v", err)
-		c.JSON(500, gin.H{"error": apperrs.Errgeneric})
+		c.JSON(500, gin.H{"error": apperrs.Errgeneric.Error()})
 		return
 	}
 
@@ -307,7 +307,7 @@ func RefreshHandler(c *gin.Context) {
 	newRefreshToken, err := generateJWTToken(claims["sub"].(string), refreshTokenExpiration, refreshSecret)
 	if err != nil {
 		log.Printf("Failed to generate new refresh token: %v", err)
-		c.JSON(500, gin.H{"error": apperrs.Errgeneric})
+		c.JSON(500, gin.H{"error": apperrs.Errgeneric.Error()})
 		return
 	}
 
@@ -369,7 +369,8 @@ func Signup(c *gin.Context, db *sql.DB) {
 	err := repository.CheckUserExists(c, creds.Name)
 
 	if err != nil {
-		c.JSON(400, gin.H{"error": err})
+		println(err.Error())
+		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -377,7 +378,7 @@ func Signup(c *gin.Context, db *sql.DB) {
 
 	if err != nil {
 		log.Printf("Failed to hash the password : %v", err)
-		c.JSON(500, gin.H{"error": apperrs.Errgeneric})
+		c.JSON(500, gin.H{"error": apperrs.Errgeneric.Error()})
 		return
 	}
 
@@ -385,7 +386,7 @@ func Signup(c *gin.Context, db *sql.DB) {
 
 	if err != nil {
 		log.Printf("Failed to Insert the user : %v", err)
-		c.JSON(500, gin.H{"error": apperrs.Errgeneric})
+		c.JSON(500, gin.H{"error": apperrs.Errgeneric.Error()})
 	} else {
 		c.JSON(200, gin.H{"message": "User created successfully"})
 	}

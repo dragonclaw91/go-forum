@@ -8,16 +8,25 @@ interface LoginResponse {
 }
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-    private apiUrl = 'http://localhost:5000/v1/signup' // Your Go endpoint
+
+    private baseUrl = 'http://localhost:5000/v1/auth'
 
     constructor(private http: HttpClient,
         private userService: UserService
     ) { }
 
 
-    login(credentials: any): Observable<any> {
+
+
+    auth(credentials: any, ): Observable<any> {
         // This sends a POST request to Go with the user's data
-        return this.http.post<LoginResponse>(this.apiUrl, credentials, { withCredentials: true }).pipe(
+        /* we are using intrpolation here because it can get hard to read if we use concat to pull everything together 
+        plus it leaves the option to add simple logic if need
+        */
+        const url = `${this.baseUrl}/${credentials.destination}`
+const {destination,...payload} = credentials
+        return this.http.post<LoginResponse>(url, credentials, { withCredentials: true }).pipe(
+
             tap(response => {
                 console.log("response", response)
                 //similar to a hook used to manage side effects
@@ -37,24 +46,4 @@ export class AuthService {
 
     }
 
-        signUp(credentials: any): Observable<any> {
-        // This sends a POST request to Go with the user's data
-        return this.http.post<LoginResponse>(this.apiUrl, credentials, { withCredentials: true }).pipe(
-            tap(response => {
-                console.log("response", response)
-                //similar to a hook used to manage side effects
-                if (response && response.access_token) {
-                    localStorage.setItem('access_token', response.access_token)
-                    // 2. Now call the Sibling Service directly
-                    this.userService.getUserSettings().subscribe({
-                        next: (userData) => {
-                            console.log("Token verified! User is:", userData);
-                        }
-                    });
-                    this.userService
-                    console.log('Access Token saved to LocalStorage')
-                }
-            })
-        );
-    }
 }
