@@ -15,7 +15,7 @@ export enum AuthAction {
 export interface AuthRequest {
   destination: AuthAction;    
   name: string;
-  password: string;     
+  password: string;   
 }
 
 
@@ -50,9 +50,9 @@ instead of having to remeber to update everything when changes are made
   */
   authState = signal({
     mode: AuthAction.Login,
-    label: 'Login'
+    label: 'Login', 
+     isLoginMode: false
   });
-  isLoginMode = signal(true);
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
   shakeTrigger = signal(false);
@@ -60,23 +60,11 @@ instead of having to remeber to update everything when changes are made
   username = signal('');
   password = signal('');
 
-  // submitLabel = computed(() =>
-  //   this.isLoginMode() ? 'Login' : 'Create Account'
-  // );
+  submitLabel = computed(() =>
+    this.authState().mode === AuthAction.Login ? 'Login' : 'Create Account'
+  );
 
-//    currentState  =  this.authState.update(current => 
-//   current.mode === AuthAction.Login 
-//     ? { mode: AuthAction.Signup, label: 'Create Account' }
-//     : { mode: AuthAction.Login, label: 'Sign In' }
-// );
 
-//   determineState(){
-//     this.authState.update(current => 
-//   current.mode === AuthAction.Login 
-//     ? { mode: AuthAction.Signup, label: 'Create Account' }
-//     : { mode: AuthAction.Login, label: 'Sign In' }
-// );
-  // }
 
   clearError() {
     this.errorMessage.set(null);
@@ -87,11 +75,25 @@ instead of having to remeber to update everything when changes are made
     this.hidePassword.update(v => !v)
   }
 
+//   // These update AUTOMATICALLY whenever mode changes
+// label = computed(() => 
+//   this.authState().mode === AuthAction.Login ? 'Login' : 'Create Account'
+// );
+
+// isLoginMode = computed(() => 
+//   this.authState().mode === AuthAction.Login
+// );
+
+isLoginMode(){
+  
+}
+
   toggleMode() {
+
       this.authState.update(current => 
   current.mode === AuthAction.Login 
-    ? { mode: AuthAction.Signup, label: 'Create Account' }
-    : { mode: AuthAction.Login, label: 'Sign In' }
+    ? { mode: AuthAction.Signup, label: 'Create Account',isLoginMode: false }
+    : { mode: AuthAction.Login, label: 'Sign In', isLoginMode: true }
 );
   }
 
@@ -112,10 +114,9 @@ instead of having to remeber to update everything when changes are made
 
 
   onSignIn() {
-    // const loginData = { name: this.username(), password: this.password(), destination:this.authState().mode };
    const loginData: AuthRequest = { name: this.username(), password: this.password(), destination:this.authState().mode }
     console.log("login data", loginData.name)
-    this.isLoading.set(true);
+    // this.isLoading.set(true);
     this.authService.auth(loginData).subscribe({
       next: (response) => {
         this.isLoading.set(false);
