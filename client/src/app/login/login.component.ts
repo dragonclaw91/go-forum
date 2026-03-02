@@ -11,11 +11,15 @@ export enum AuthAction {
   Login = 'login',
   Signup = 'signup'
 }
-
-export interface AuthRequest {
-  destination: AuthAction;    
+export interface AuthState {
+  mode: AuthAction;
+  isLoading: boolean;
+  errorMessage: string | null;
+  errorLabel: boolean;
+  shakeTrigger: boolean;
+  destination: AuthAction;
   name: string;
-  password: string;   
+  password: string;
 }
 
 
@@ -41,6 +45,8 @@ export class LoginComponent implements OnInit {
 
 
 
+
+
   ngOnInit(): void {
     console.log('Component is now on the DOM!');
   }
@@ -48,15 +54,26 @@ export class LoginComponent implements OnInit {
   /* we are using an object here because its easier to keep track of things in the object 
 instead of having to remeber to update everything when changes are made
   */
-  authState = signal({
+  authState = signal<AuthState>({
     mode: AuthAction.Login,
-    label: 'Login', 
-     isLoginMode: false
+    isLoading: false,
+    errorMessage: null,
+    errorLabel: false,
+    shakeTrigger: false,
+    name: "",
+    password: "",
+    destination: AuthAction.Login
   });
-  isLoading = signal(false);
-  errorMessage = signal<string | null>(null);
-  shakeTrigger = signal(false);
-  errorLabel = signal(false);
+
+  // because the new oblect is defined later we overwrite the existing object
+  // basiclly copying the state as is then comparing ot using the spread opeartor
+  private patchState(patch: Partial<AuthState>) {
+    this.authState.update(current => ({
+      ...current,
+      ...patch
+    }));
+  }
+
   username = signal('');
   password = signal('');
 
@@ -67,80 +84,76 @@ instead of having to remeber to update everything when changes are made
 
 
   clearError() {
-    this.errorMessage.set(null);
-    this.errorLabel.set(false)
+    this.patchState({ errorLabel: false, errorMessage: null })
   }
 
   togglePassword() {
     this.hidePassword.update(v => !v)
   }
 
-//   // These update AUTOMATICALLY whenever mode changes
-// label = computed(() => 
-//   this.authState().mode === AuthAction.Login ? 'Login' : 'Create Account'
-// );
 
-// isLoginMode = computed(() => 
-//   this.authState().mode === AuthAction.Login
-// );
 
-isLoginMode(){
-  
-}
+  isLoginMode = computed(() => {
+    return this.authState().mode === AuthAction.Login
+  }
+  );
+
+
 
   toggleMode() {
-
-      this.authState.update(current => 
-  current.mode === AuthAction.Login 
-    ? { mode: AuthAction.Signup, label: 'Create Account',isLoginMode: false }
-    : { mode: AuthAction.Login, label: 'Sign In', isLoginMode: true }
-);
+    this.authState().mode === AuthAction.Login ? this.patchState({ mode: AuthAction.Signup }) : this.patchState({ mode: AuthAction.Login })
   }
 
   onInputClear() {
-    if (this.errorMessage()) {
-      this.clearError();
+    if (this.authState().errorMessage) {
+      this.patchState({
+        errorLabel: false,
+      });
     }
   }
   // shake the login card for a few seconds
   triggerShake() {
-    this.shakeTrigger.set(true);
-    this.errorLabel.set(true);
+    this.patchState({
+      errorLabel: true,
+      shakeTrigger: true
+    });
     setTimeout(() => {
-      this.shakeTrigger.set(false);
+      this.patchState({ shakeTrigger: false })
     }, 400);
   }
 
+  dynamicClear() {
+    if (this.authState().errorLabel) {
+
+    }
+  }
 
 
   onSignIn() {
-   const loginData: AuthRequest = { name: this.username(), password: this.password(), destination:this.authState().mode }
+    const loginData = { name: this.authState().name, password: this.authState().password, destination: this.authState().mode }
     console.log("login data", loginData.name)
-    // this.isLoading.set(true);
+
+    this.patchState({ isLoading: true })
     this.authService.auth(loginData).subscribe({
       next: (response) => {
-        this.isLoading.set(false);
+        // this.isLoading.set(false);
+        this.patchState({ isLoading: false })
         console.log('Login Successful!', response);
         // this.router.navigate(['/home']);
       },
       error: (err) => {
         console.log("ERR", err)
         const msg = err.error?.error || 'an unexpected error occured'
-
-        this.errorMessage.set(msg);
-
+        this.patchState({ errorMessage: msg })
         /* Kill the old timer
           if we dont problems will happen when users
           try to submit again before the error clears */
         if (this.errorTimer) clearTimeout(this.errorTimer);
-
         const isMobile = window.innerWidth < 1000;
-
         if (isMobile) {
-          this.errorTimer = setTimeout(() => this.errorMessage.set(null), 5000);
+          this.errorTimer = setTimeout(() => this.patchState({ errorMessage: null, errorLabel: false }), 5000);
         }
-
-        this.isLoading.set(false);
+        this.patchState({ isLoading: false })
         this.triggerShake();
       }
     });
