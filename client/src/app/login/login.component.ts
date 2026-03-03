@@ -15,7 +15,6 @@ export interface AuthState {
   mode: AuthAction;
   isLoading: boolean;
   errorMessage: string | null;
-  errorLabel: boolean;
   shakeTrigger: boolean;
   destination: AuthAction;
   name: string;
@@ -58,10 +57,9 @@ instead of having to remeber to update everything when changes are made
     mode: AuthAction.Login,
     isLoading: false,
     errorMessage: null,
-    errorLabel: false,
     shakeTrigger: false,
-    name: "",
-    password: "",
+    name: '',
+    password: '',
     destination: AuthAction.Login
   });
 
@@ -74,22 +72,31 @@ instead of having to remeber to update everything when changes are made
     }));
   }
 
-  username = signal('');
-  password = signal('');
+  // username = signal('');
+  // password = signal('');
 
   submitLabel = computed(() =>
     this.authState().mode === AuthAction.Login ? 'Login' : 'Create Account'
   );
 
+  footerButton = computed(() => this.authState().mode === AuthAction.Login ? 'Don\'t have an account? Register' : 'Already have an account? Login')
+
+  // using the double not nto prevent things like null to be eevaluated as false
+  errorLabel = computed(() => !!this.authState().errorMessage)
 
 
   clearError() {
-    this.patchState({ errorLabel: false, errorMessage: null })
+    this.patchState({  errorMessage: null })
   }
 
   togglePassword() {
     this.hidePassword.update(v => !v)
   }
+
+
+    togglePasswordType = computed(() => 
+    this.hidePassword() ? 'password' : 'text'
+  )
 
 
 
@@ -104,17 +111,10 @@ instead of having to remeber to update everything when changes are made
     this.authState().mode === AuthAction.Login ? this.patchState({ mode: AuthAction.Signup }) : this.patchState({ mode: AuthAction.Login })
   }
 
-  onInputClear() {
-    if (this.authState().errorMessage) {
-      this.patchState({
-        errorLabel: false,
-      });
-    }
-  }
+
   // shake the login card for a few seconds
   triggerShake() {
     this.patchState({
-      errorLabel: true,
       shakeTrigger: true
     });
     setTimeout(() => {
@@ -122,11 +122,13 @@ instead of having to remeber to update everything when changes are made
     }, 400);
   }
 
-  dynamicClear() {
-    if (this.authState().errorLabel) {
-
-    }
-  }
+ updateField(key: string, value: string) {
+  this.authState.update(state => ({
+    ...state,
+    [key]: value,        
+    errorMessage: null   
+  }));
+}
 
 
   onSignIn() {
@@ -151,7 +153,7 @@ instead of having to remeber to update everything when changes are made
         if (this.errorTimer) clearTimeout(this.errorTimer);
         const isMobile = window.innerWidth < 1000;
         if (isMobile) {
-          this.errorTimer = setTimeout(() => this.patchState({ errorMessage: null, errorLabel: false }), 5000);
+          this.errorTimer = setTimeout(() => this.patchState({ errorMessage: null,  }), 5000);
         }
         this.patchState({ isLoading: false })
         this.triggerShake();

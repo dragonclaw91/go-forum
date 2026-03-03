@@ -20,17 +20,17 @@
           <form (ngSubmit)="onSignIn()"
             class="d-flex flex-column flex-grow-1 justify-content-around">
             <div class="mb-3">
-              <label class="form-label label-wrapper " [class.has-error]="authState().errorLabel">Username</label>
-              <input type="username" name="uesrname" class="form-control form-control-lg py-3" placeholder="username"
-                [(ngModel)]="username" (input)="onInputClear()">
+              <label class="form-label label-wrapper " [class.has-error]="this.errorLabel()">Username</label>
+              <input (input)="updateField('username', $any($event.target).value)" type="text" name="uesrname" class="form-control form-control-lg py-3" placeholder="username"
+                [(ngModel)]="authState().name" (input)="clearError()">
             </div>
 
             <div class="mb-3">
          
-            <label class="form-label label-wrapper" [class.has-error]="authState().errorLabel">Password</label>
+            <label class="form-label label-wrapper" [class.has-error]="this.errorLabel()">Password</label>
             <div class="signup">
-            <input [type]="hidePassword() ? 'text' : 'password'" name="password" class="form-control form-control-lg py-3" [(ngModel)]="password"
-              (input)="onInputClear()">
+            <input (input)="updateField('username', $any($event.target).value)" [type]="this.togglePasswordType()" name="password" class="form-control form-control-lg py-3" [(ngModel)]="authState().password"
+              (input)="clearError()">
                    @if (isLoginMode() == false) {
     
               <button type="button" (click)="togglePassword()">
@@ -51,7 +51,7 @@
           </button>
 
           <button type="button" class="btn btn-link btn-sm" (click)="this.toggleMode()">
-            {{ isLoginMode() ? 'Don\'t have an account? Register' : 'Already have an account? Login' }}
+            {{ this.footerButton() }}
           </button>
         </div>
         </form>
