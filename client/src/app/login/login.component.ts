@@ -4,6 +4,9 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../auth/auth.service';
 import { ReactiveFormsModule } from '@angular/forms';
+import { addIcons } from 'ionicons';
+import { eyeOutline, eyeOffOutline } from 'ionicons/icons';
+import { IonButton, IonIcon, IonInput, IonItem, IonList } from '@ionic/angular/standalone';
 
 /* we are using enums for type saftey and to avoid passing around magic strings 
 and we are defineing it up top to remind ourselves that this is going to be used else where in the app */
@@ -28,10 +31,15 @@ export interface AuthState {
   imports: [
     CommonModule,
     FormsModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    IonButton, 
+    IonIcon, 
+    IonInput,
+     IonItem, 
+     IonList
   ],
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.css']
+  styleUrls: ['./login.component.scss']
 })
 
 
@@ -45,9 +53,10 @@ export class LoginComponent implements OnInit {
 
 
 
-
+// simialar to use effect in react
   ngOnInit(): void {
     console.log('Component is now on the DOM!');
+    addIcons({ 'eye-outline': eyeOutline, 'eye-off-outline': eyeOffOutline });
   }
   hidePassword = signal(false)
   /* we are using an object here because its easier to keep track of things in the object 

@@ -5,7 +5,11 @@
   "projects": {
     "go-forum-app": {
       "projectType": "application",
-      "schematics": {},
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "scss"
+        }
+      },
       "root": "",
       "sourceRoot": "src",
       "prefix": "app",
@@ -33,7 +37,7 @@
               "node_modules/bootstrap/dist/css/bootstrap.min.css",
             ],
             "scripts": [
-         "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"
+              "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"
             ]
           },
           "configurations": {
@@ -62,6 +66,9 @@
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "buildTarget": "go-forum-app:build"
+          },
           "configurations": {
             "production": {
               "buildTarget": "go-forum-app:build:production"

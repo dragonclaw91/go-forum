@@ -1,0 +1,8 @@
+{
+  "name": "go-forum-app",
+  "integrations": {"capacitor": {}},
+"type": "custom",
+  "scripts": {
+    "serve": "npm start"
+  }
+}
