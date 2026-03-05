@@ -2,7 +2,26 @@
   <h1 class="header center">Welcome to the App</h1>
   <div class=" row h-100 center ">
     <div class=" container  d-flex justify-content-center align-items-center">
-      <div class="card" [class.apply-shake]="authState().shakeTrigger">
+      <ion-card mode="md">
+        <ion-card-header>
+          <ion-card-title>
+            <h1 class=" text-center w-100">
+              {{ isLoginMode() ? 'Login' : 'Sign Up' }}
+            </h1>
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          @if (authState().errorMessage) {
+          <ion-toast [isOpen]="!!authService.authState().errorMessage" [message]="authService.authState().errorMessage"
+            [position]="isMobile ? 'bottom' : 'top'" [duration]="isMobile ? 5000 : 0" class="neon-adaptive-toast">
+          </ion-toast>
+          }
+        </ion-card-content>
+      </ion-card>
+
+
+
+      <!-- <div class="card" [class.apply-shake]="authState().shakeTrigger">
         <div class="card-body p-5 d-flex flex-column justify-content-between">
           <h1 class="card-title bottom text-center w-100">
             {{ isLoginMode() ? 'Login' : 'Sign Up' }}
@@ -17,49 +36,46 @@
           </div>
           }
 
-          <form (ngSubmit)="onSignIn()" class="d-flex flex-column flex-grow-1 justify-content-around">
-            <ion-list lines="none" class="bg-transparent">
-              <ion-item class="cyber-item" [class.has-error]="errorLabel()">
-                <ion-input label="Username" labelPlacement="stacked" type="text" placeholder="username"
-                  [(ngModel)]="authState().name"
-                  (ionInput)="updateField('username', $any($event.target).value); clearError()" class="cyber-input">
-                </ion-input>
-              </ion-item>
-            </ion-list>
+          <form (ngSubmit)="onSignIn()"
+            class="d-flex flex-column flex-grow-1 justify-content-around">
+            <div class="mb-3">
+              <label class="form-label label-wrapper " [class.has-error]="this.errorLabel()">Username</label>
+              <input (input)="updateField('username', $any($event.target).value)" type="text" name="uesrname" class="form-control form-control-lg py-3" placeholder="username"
+                [(ngModel)]="authState().name" (input)="clearError()">
+            </div>
 
             <div class="mb-3">
-
-              <label class="form-label label-wrapper" [class.has-error]="this.errorLabel()">Password</label>
-              <div class="signup">
-                <input (input)="updateField('username', $any($event.target).value)" [type]="this.togglePasswordType()"
-                  name="password" class="form-control form-control-lg py-3" [(ngModel)]="authState().password"
-                  (input)="clearError()">
-                @if (isLoginMode() == false) {
-
-                <button type="button" (click)="togglePassword()">
-                  {{ hidePassword() ? '👁️' : '🙈' }}
-                </button>
-                }
-              </div>
-            </div>
-
-            <div class="d-grid gap-2 mt-4">
-              <button type="submit" class="btn  btn-lg w-100 py-3 fw-bold btn-color" [disabled]="authState().isLoading">
-                @if (authState().isLoading) {
-                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                Loading...
-                } @else {
-                {{ this.submitLabel()}}
-                }
+         
+            <label class="form-label label-wrapper" [class.has-error]="this.errorLabel()">Password</label>
+            <div class="signup">
+            <input (input)="updateField('username', $any($event.target).value)" [type]="this.togglePasswordType()" name="password" class="form-control form-control-lg py-3" [(ngModel)]="authState().password"
+              (input)="clearError()">
+                   @if (isLoginMode() == false) {
+    
+              <button type="button" (click)="togglePassword()">
+                {{ hidePassword() ? '👁️' : '🙈' }}
               </button>
-
-              <button type="button" class="btn btn-link btn-sm" (click)="this.toggleMode()">
-                {{ this.footerButton() }}
-              </button>
+            }
             </div>
-          </form>
-
         </div>
-      </div>
+
+        <div class="d-grid gap-2 mt-4">
+          <button type="submit" class="btn  btn-lg w-100 py-3 fw-bold btn-color" [disabled]="authState().isLoading">
+            @if (authState().isLoading) {
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+            Loading...
+            } @else {
+            {{ this.submitLabel()}}
+            }
+          </button>
+
+          <button type="button" class="btn btn-link btn-sm" (click)="this.toggleMode()">
+            {{ this.footerButton() }}
+          </button>
+        </div>
+        </form>
+
+      </div> -->
     </div>
   </div>
+</div>

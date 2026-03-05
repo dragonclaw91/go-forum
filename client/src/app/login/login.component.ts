@@ -6,7 +6,17 @@ import { AuthService } from '../auth/auth.service';
 import { ReactiveFormsModule } from '@angular/forms';
 import { addIcons } from 'ionicons';
 import { eyeOutline, eyeOffOutline } from 'ionicons/icons';
-import { IonButton, IonIcon, IonInput, IonItem, IonList } from '@ionic/angular/standalone';
+import {
+  IonButton,
+  IonCard,
+  IonCardContent,
+  IonCardHeader,
+  IonCardSubtitle,
+  IonCardTitle,
+  IonToast,
+
+} from '@ionic/angular/standalone';
+import { Platform } from '@ionic/angular';
 
 /* we are using enums for type saftey and to avoid passing around magic strings 
 and we are defineing it up top to remind ourselves that this is going to be used else where in the app */
@@ -32,11 +42,14 @@ export interface AuthState {
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    IonButton, 
-    IonIcon, 
-    IonInput,
-     IonItem, 
-     IonList
+    IonButton,
+    IonCard,
+    IonCardContent,
+    IonCardHeader,
+    IonCardSubtitle,
+    IonCardTitle,
+    Platform,
+    IonToast
   ],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
@@ -51,13 +64,19 @@ export class LoginComponent implements OnInit {
   private errorTimer: any;
 
 
+  constructor(private platform: Platform) { }
 
-
-// simialar to use effect in react
+  // simialar to use effect in react
   ngOnInit(): void {
     console.log('Component is now on the DOM!');
+
     addIcons({ 'eye-outline': eyeOutline, 'eye-off-outline': eyeOffOutline });
   }
+  get isMobile() {
+    // Returns true for phones and tablets, false for desktop web
+    return this.platform.is('mobile') || this.platform.is('tablet');
+  }
+
   hidePassword = signal(false)
   /* we are using an object here because its easier to keep track of things in the object 
 instead of having to remeber to update everything when changes are made
@@ -95,7 +114,7 @@ instead of having to remeber to update everything when changes are made
 
 
   clearError() {
-    this.patchState({  errorMessage: null })
+    this.patchState({ errorMessage: null })
   }
 
   togglePassword() {
@@ -103,7 +122,7 @@ instead of having to remeber to update everything when changes are made
   }
 
 
-    togglePasswordType = computed(() => 
+  togglePasswordType = computed(() =>
     this.hidePassword() ? 'password' : 'text'
   )
 
@@ -131,13 +150,13 @@ instead of having to remeber to update everything when changes are made
     }, 400);
   }
 
- updateField(key: string, value: string) {
-  this.authState.update(state => ({
-    ...state,
-    [key]: value,        
-    errorMessage: null   
-  }));
-}
+  updateField(key: string, value: string) {
+    this.authState.update(state => ({
+      ...state,
+      [key]: value,
+      errorMessage: null
+    }));
+  }
 
 
   onSignIn() {
@@ -162,7 +181,7 @@ instead of having to remeber to update everything when changes are made
         if (this.errorTimer) clearTimeout(this.errorTimer);
         const isMobile = window.innerWidth < 1000;
         if (isMobile) {
-          this.errorTimer = setTimeout(() => this.patchState({ errorMessage: null,  }), 5000);
+          this.errorTimer = setTimeout(() => this.patchState({ errorMessage: null, }), 5000);
         }
         this.patchState({ isLoading: false })
         this.triggerShake();

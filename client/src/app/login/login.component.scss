@@ -1,23 +1,29 @@
-.card {
+
+
+ion-card {
+  // display: flex;
+  // flex-direction: column;
+  // justify-content: space-between;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(0, 0, 0, 0.2);
   min-height: 80vh;
   max-width: 1300px;
-  background-color: rgba(59, 59, 59, 0.603);
-  color: white;
   width: 92%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.4s cubic-bezier(0.15, 0.85, 0.35, 1.2);
   position: relative;
   overflow: hidden;
   border-radius: 24px;
-  /* The "Pipe" curvature */
-  border: 2px solid rgba(255, 255, 255, 0.05);
-  /* Dim base pipe */
+/* The "Pipe" curvature */
+border: 2px solid rgba(255, 255, 255, 0.05);
 
-  /* Unified transition for everything EXCEPT the shake */
-  transition:
-    border-color 0.2s ease-out,
-    box-shadow 0.3s ease-out,
-    background-color 0.4s ease;
+
+/* Unified transition for everything EXCEPT the shake */
+transition:
+  border-color 0.2s ease-out,
+  box-shadow 0.3s ease-out,
+  background-color 0.4s ease;
+
+
 }
 
 .signup {
@@ -310,7 +316,7 @@ label.form-label.has-error {
 .cyber-item {
 
   /* Target the Label specifically */
-  ion-input {
+  ion-item {
     --color: rgba(255, 255, 255, 0.9);
     --placeholder-color: rgba(255, 255, 255, 0.3);
 
