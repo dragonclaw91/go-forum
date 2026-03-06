@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, signal, NgModule, computed, inject, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, NgModule, computed, inject, OnInit} from '@angular/core';
 import { RouterOutlet, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, Validators } from '@angular/forms';
@@ -14,9 +14,12 @@ import {
   IonCardSubtitle,
   IonCardTitle,
   IonToast,
+  Platform,
+  IonItem,
+  IonInput
 
 } from '@ionic/angular/standalone';
-import { Platform } from '@ionic/angular';
+
 
 /* we are using enums for type saftey and to avoid passing around magic strings 
 and we are defineing it up top to remind ourselves that this is going to be used else where in the app */
@@ -48,11 +51,12 @@ export interface AuthState {
     IonCardHeader,
     IonCardSubtitle,
     IonCardTitle,
-    Platform,
-    IonToast
+    IonToast,
+    IonItem,
+    IonInput
   ],
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.scss']
+  styleUrls: ['./login.component.scss'],
 })
 
 
@@ -110,7 +114,7 @@ instead of having to remeber to update everything when changes are made
   footerButton = computed(() => this.authState().mode === AuthAction.Login ? 'Don\'t have an account? Register' : 'Already have an account? Login')
 
   // using the double not nto prevent things like null to be eevaluated as false
-  errorLabel = computed(() => !!this.authState().errorMessage)
+  hasError = computed(() => !!this.authState().errorMessage)
 
 
   clearError() {

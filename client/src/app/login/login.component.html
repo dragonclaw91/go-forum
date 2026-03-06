@@ -12,10 +12,18 @@
         </ion-card-header>
         <ion-card-content>
           @if (authState().errorMessage) {
-          <ion-toast [isOpen]="!!authService.authState().errorMessage" [message]="authService.authState().errorMessage"
+          <ion-toast [isOpen]="this.hasError()" [message]="authState().errorMessage"
             [position]="isMobile ? 'bottom' : 'top'" [duration]="isMobile ? 5000 : 0" class="neon-adaptive-toast">
           </ion-toast>
           }
+          <form (ngSubmit)="onSignIn()" >
+            <div c >
+              <ion-item class="cyber-item" >
+                <ion-input class="cyber-terminal-input"  label="Stacked label" labelPlacement="stacked" placeholder="Enter text"></ion-input>
+              </ion-item>
+            </div>
+          </form>
+
         </ion-card-content>
       </ion-card>
 
