@@ -10,16 +10,16 @@
             </h1>
           </ion-card-title>
         </ion-card-header>
-        <ion-card-content>
+        <ion-card-content >
           @if (authState().errorMessage) {
           <ion-toast [isOpen]="this.hasError()" [message]="authState().errorMessage"
             [position]="isMobile ? 'bottom' : 'top'" [duration]="isMobile ? 5000 : 0" class="neon-adaptive-toast">
           </ion-toast>
           }
-          <form (ngSubmit)="onSignIn()" >
-            <div c >
-              <ion-item class="cyber-item" >
-                <ion-input class="cyber-terminal-input"  label="Stacked label" labelPlacement="stacked" placeholder="Enter text"></ion-input>
+          <form  class="d-flex flex-column flex-grow-1 justify-content-around" (ngSubmit)="onSignIn()" >
+            <div class="mb-3" >
+              <ion-item class="cyber-item " >
+                <ion-input class="cyber-terminal-input text-center"  label="Stacked labeljglfkdjaglfjdlgjlfdsjgljklgj" labelPlacement="stacked" placeholder="Enter text"></ion-input>
               </ion-item>
             </div>
           </form>

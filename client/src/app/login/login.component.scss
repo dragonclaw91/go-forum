@@ -1,6 +1,7 @@
 ion-card {
-  display: flex;
-  flex-direction: column;
+  // display: flex;
+  // flex-direction: column;
+  // align-items: stretch;
   // justify-content: space-between;
   background: rgba(255, 255, 255, 0.1);
   color: white;
@@ -306,89 +307,178 @@ label.form-label.has-error {
   }
 }
 
-.cyber-item {
-  display: flex !important;
-  align-items: stretch !important; 
-  width: 100% !important;
+ion-item.cyber-item {
+  // --display: flex !important;
+  // align-items: stretch ; 
+  // width: 100% ;
   // flex: 0 0 auto;
   // flex-direction: column;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-  margin-bottom: 15px;
-  // width: 100%;
+  // border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  // margin-bottom: 15px;
+  // // width: 100%;
+  // --inner-padding-end: 0;
+  // --padding-start: 0;
+  // display: flex !important;
+  // align-items: stretch !important;
+ 
+
+  /* 2. Target the wrapper to prove we hit the edges */
+ &::part(native) {
+  // --display: flex !important;
+    // width: 100%;
+    color: #00ff00 !important;             /* Matrix Green */
+    text-shadow: 0 0 8px #00ff00;          /* Neon Glow */
+    font-family: 'Courier New', monospace; 
+    letter-spacing: 5px;
+    background: rgba(0, 255, 0, 0.1) !important; /* Tinted background */
+  }
+
+  
+
+//   .cyber-terminal-input {
+// --display: flex !important;
+//     --background: rgba(0, 255, 0, 0.1);
+//   --color: #00ff00;
+//   --placeholder-color: #004400;
+//   --padding-start: 15px;
+//   --padding-end: 15px;
+// &::part(container) {
+//     width: 100% !important;
+//     --display: flex !important;
+//     background: rgba(0, 255, 0, 0.1) !important; 
+//     border: 2px solid #00ff00 !important;
+//   }
+
+//   /* The 'Passenger' needs to be told to stretch their arms */
+//   &::part(native) {
+//     flex: 1 1 auto !important; /* Force it to grow to fill the container */
+//     width: 100% !important;    /* Hit the left and right walls */
+//     padding: 0 15px !important; /* Give it some breathing room from the border */
+//     color: #00ff00 !important;
+//     text-align: center;
+//   }
+
+//   /* If you have a label inside, it needs to hit the walls too */
+//   &::part(label-container) {
+//     width: 100% !important;
+//     flex: 1 1 auto !important;
+//   }
+//   }
 
   /* Target the Label specifically */
-  ion-item {
+  // ion-item {
 
-    --color: rgba(255, 255, 255, 0.9);
-    --placeholder-color: rgba(255, 255, 255, 0.3);
+  //   --color: rgba(255, 255, 255, 0.9);
+  //   --placeholder-color: rgba(255, 255, 255, 0.3);
 
-    /* Responsive Font Scaling from your CSS */
-    font-size: clamp(1.1rem, 2vw, 1.5rem);
-    font-weight: 800;
-    letter-spacing: 0.1rem;
-    text-transform: uppercase;
+  //   /* Responsive Font Scaling from your CSS */
+  //   font-size: clamp(1.1rem, 2vw, 1.5rem);
+  //   font-weight: 800;
+  //   letter-spacing: 0.1rem;
+  //   text-transform: uppercase;
 
-    /* Styling the Label part in Ionic */
-    &::part(label) {
-      margin-bottom: 1rem;
-      transition: all 0.4s ease;
-    }
-  }
+  //   /* Styling the Label part in Ionic */
+  //   &::part(label) {
+  //     margin-bottom: 1rem;
+  //     transition: all 0.4s ease;
+  //   }
+  // }
 
   /* The "Pipe Ignites" state (Error) */
-  &.has-error {
-    border-bottom: 2px solid #FF7F50; // The bottom border turns coral too
+  // &.has-error {
+  //   border-bottom: 2px solid #FF7F50; // The bottom border turns coral too
 
-    ion-input::part(label) {
-      color: #FF7F50 !important;
-      text-shadow:
-        0 0 5px rgba(255, 127, 80, 0.8),
-        0 0 15px rgba(255, 127, 80, 0.3);
-    }
-  }
+  //   ion-input::part(label) {
+  //     color: #FF7F50 !important;
+  //     text-shadow:
+  //       0 0 5px rgba(255, 127, 80, 0.8),
+  //       0 0 15px rgba(255, 127, 80, 0.3);
+  //   }
+  // }
 
 }
+ion-input.cyber-terminal-input {
+min-width: 500px !important;
+  width: 100%; // Let it grow larger than 500px if the card is huge
 
-.cyber-terminal-input {
-  /* 1. Base State (High-contrast white metadata) */
-  --label-color: rgba(255, 255, 255, 0.9);
-  --label-border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-  --label-font-size: clamp(1.1rem, 2vw, 1.5rem);
-  --label-font-weight: 800;
-  --label-letter-spacing: 0.1rem;
-  --label-text-transform: uppercase;
-  --label-margin-bottom: 1rem;
-  --label-transition: all 0.4s ease;
-  --label-font-family: 'monospace';
-  --label-margin-bottom: 2rem;
-  // --native-width: 1000px;
+  &::part(native) {
+    /* Step 2: Force the internal 'Legacy' input to match that floor */
+    min-width: 500px !important;
+    width: 100%;
+    
+    /* Step 3: Center the text within that 500px span */
+    text-align: center;
+    letter-spacing: 2px;
+  }
+}
+  /* 1. The Variable Fix (Ionic's preferred way) */
+  // --display: block; 
+  // --color: blue;
+  // --flex: 1 1 100% !important;
+  /* 2. The CSS Fix (The "Brute Force" way) */
 
-  // flex-direction: column;
   
-  /* 2. Occupy the full width of the parent flex container */
+  /* 3. The Growth Command */
   // width: 100% !important;
-  // flex: 1 1 auto;
 
 
-  /* 2. The "Ignition" State (When the pipe turns Coral) */
-  &.has-error {
-    --label-color: #FF7F50 !important;
-    /* Your Coral color */
-    --label-color-focused: #FF7F50 !important;
+  /* 4. Ensuring the internal parts follow the Host */
+  // &::part(container) {
+  //   width: 100% !important;
+  //   display: flex !important;
+  // }
 
-    &::part(label) {
-      /* Porting your Neon Aura text-shadow */
-      text-shadow:
-        0 0 5px rgba(255, 127, 80, 0.8),
-        /* Hot core */
-        0 0 15px rgba(255, 127, 80, 0.3);
-      /* Atmospheric glow */
+//   &::part(native) {
+//     // min-width: 500px;
+//     // width: 100% !important;
+//     // text-align: center; /* This centers the text inside the now-huge box */
+//   }
+// }
+// .cyber-terminal-input {
+//   /* 1. Base State (High-contrast white metadata) */
+//   --label-color: rgba(255, 255, 255, 0.9);
+//   --label-border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+//   --label-font-size: clamp(1.1rem, 2vw, 1.5rem);
+//   --label-font-weight: 800;
+//   --label-letter-spacing: 0.1rem;
+//   --label-text-transform: uppercase;
+//   --label-margin-bottom: 1rem;
+//   --label-transition: all 0.4s ease;
+//   --label-font-family: 'monospace';
+//   --label-margin-bottom: 2rem;
 
-      /* Visual "Alert" - optional slight scale up on error */
-      transform: scale(1.02);
-    }
+  
+//   // --native-width: 1000px;
 
-    /* The input text itself should also dim or turn coral to match */
-    color: #FF7F50;
-  }
-}
+//   // flex-direction: column;
+  
+//   /* 2. Occupy the full width of the parent flex container */
+//   // width: 100% !important;
+//   // flex: 1 1 auto;
+
+
+
+//   /* 2. The "Ignition" State (When the pipe turns Coral) */
+//   &.has-error {
+//     --label-color: #FF7F50 !important;
+//     /* Your Coral color */
+//     --label-color-focused: #FF7F50 !important;
+
+//     &::part(label) {
+//       /* Porting your Neon Aura text-shadow */
+//       text-shadow:
+//         0 0 5px rgba(255, 127, 80, 0.8),
+//         /* Hot core */
+//         0 0 15px rgba(255, 127, 80, 0.3);
+//       /* Atmospheric glow */
+
+//       /* Visual "Alert" - optional slight scale up on error */
+//       transform: scale(1.02);
+//     }
+
+    
+
+//     /* The input text itself should also dim or turn coral to match */
+//     color: #FF7F50;
+//   }
+// }
