@@ -1,39 +1,39 @@
-ion-card {
-  // display: flex;
-  // flex-direction: column;
-  // align-items: stretch;
-  // justify-content: space-between;
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  min-height: 80vh;
-  max-width: 1300px;
-  width: 92%;
-  position: relative;
-  overflow: hidden;
-  border-radius: 24px;
-  /* The "Pipe" curvature */
-  border: 2px solid rgba(255, 255, 255, 0.05);
+// ion-card {
+//   // display: flex;
+//   // flex-direction: column;
+//   // align-items: stretch;
+//   // justify-content: space-between;
+//   background: rgba(255, 255, 255, 0.1);
+//   color: white;
+//   border: 1px solid rgba(0, 0, 0, 0.2);
+//   min-height: 80vh;
+//   max-width: 1300px;
+//   width: 92%;
+//   position: relative;
+//   overflow: hidden;
+//   border-radius: 24px;
+//   /* The "Pipe" curvature */
+//   border: 2px solid rgba(255, 255, 255, 0.05);
 
 
-  /* Unified transition for everything EXCEPT the shake */
-  transition:
-    border-color 0.2s ease-out,
-    box-shadow 0.3s ease-out,
-    background-color 0.4s ease;
+//   /* Unified transition for everything EXCEPT the shake */
+//   transition:
+//     border-color 0.2s ease-out,
+//     box-shadow 0.3s ease-out,
+//     background-color 0.4s ease;
 
 
-}
+// }
 
 .signup {
   display: flex;
 }
 
-.page {
-  background-color: black;
-  flex: 1;
-  overflow: hidden;
-}
+// .page {
+//   background-color: black;
+//   flex: 1;
+//   overflow: hidden;
+// }
 
 .header {
   display: flex;
@@ -204,7 +204,6 @@ ion-card {
 
 .error-banner .close-btn {
   /* Resetting Bootstrap defaults */
-  background: rgba(255, 127, 80, 0.1) !important;
   border: 1px solid rgba(255, 127, 80, 0.5) !important;
   padding: 0 !important;
   box-shadow: none !important;
@@ -306,179 +305,188 @@ label.form-label.has-error {
     opacity: 1;
   }
 }
-
-ion-item.cyber-item {
-  // --display: flex !important;
-  // align-items: stretch ; 
-  // width: 100% ;
-  // flex: 0 0 auto;
-  // flex-direction: column;
-  // border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-  // margin-bottom: 15px;
-  // // width: 100%;
-  // --inner-padding-end: 0;
-  // --padding-start: 0;
-  // display: flex !important;
-  // align-items: stretch !important;
- 
-
-  /* 2. Target the wrapper to prove we hit the edges */
- &::part(native) {
-  // --display: flex !important;
-    // width: 100%;
-    color: #00ff00 !important;             /* Matrix Green */
-    text-shadow: 0 0 8px #00ff00;          /* Neon Glow */
-    font-family: 'Courier New', monospace; 
-    letter-spacing: 5px;
-    background: rgba(0, 255, 0, 0.1) !important; /* Tinted background */
+.ledger-footer,
+.action-zone{
+  margin: auto;
+}
+::ng-deep {
+  /* 1. The Input Line */
+  .p-inputtext {
+    background: transparent !important; /* Let the paper texture show through */
+    border: none !important;
+    border-bottom: 2px solid #5d4037 !important; /* The "Ink" underline */
+    border-radius: 0 !important;
+    padding-left: 0.5rem !important;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    
+    /* Make the text look like it was typed on a typewriter */
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
   }
 
+  /* 2. The "Active" State (When user clicks) */
+  .p-inputtext:focus {
+    outline: none !important;
+    // border-bottom: 2px solid #d4af37 !important; /* Turns Brass when active */
+    // box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2) !important; /* Subtle glow */
+  }
+
+  /* 3. Adjust the Floating Label so it doesn't overlap the line too much */
+  .p-float-label label {
+    // left: 0.5rem !important;
+    // color: #8d6e63 !important; /* Faded ink look */
+    transition: all 0.2s ease-out;
+  }
+
+  /* 4. When the label "floats" up */
+  .p-float-label input:focus ~ label,
+  .p-float-label input.p-filled ~ label {
+    color: #3e2723 !important; /* Darker ink when active */
+    font-weight: bold;
+    font-size: 0.8rem;
+  }
+}
+/* 1. Target the PrimeNG Card specifically */
+::ng-deep .mahogany-ledger .p-card {
+  /* The "Wood" Gradient: dark center to slightly lighter edges */
+  background: linear-gradient(145deg, #3d1f14, #2a150c); 
   
+  /* Give it that heavy furniture feel */
+  border: 1px solid #1a0d08;
+  border-radius: 6px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7), 
+              inset 0 1px 1px rgba(255, 255, 255, 0.1); /* Subtle "rim" light */
+  
+  color: #e0c9a6; /* Parchment-colored text for the contrast */
+  overflow: hidden; /* Keeps our "Letterhead" from spilling over the corners */
+  /* 1. Create the 3D space */
+  transform-style: preserve-3d;
+  perspective: 1000px; 
 
-//   .cyber-terminal-input {
-// --display: flex !important;
-//     --background: rgba(0, 255, 0, 0.1);
-//   --color: #00ff00;
-//   --placeholder-color: #004400;
-//   --padding-start: 15px;
-//   --padding-end: 15px;
-// &::part(container) {
-//     width: 100% !important;
-//     --display: flex !important;
-//     background: rgba(0, 255, 0, 0.1) !important; 
-//     border: 2px solid #00ff00 !important;
-//   }
+  /* 2. Rotate it on the X-axis (tilting it back) */
+  /* Positive degrees tilt it away from you */
+  transform: perspective(1000px) rotateX(15deg); 
 
-//   /* The 'Passenger' needs to be told to stretch their arms */
-//   &::part(native) {
-//     flex: 1 1 auto !important; /* Force it to grow to fill the container */
-//     width: 100% !important;    /* Hit the left and right walls */
-//     padding: 0 15px !important; /* Give it some breathing room from the border */
-//     color: #00ff00 !important;
-//     text-align: center;
-//   }
+  /* 3. Add a "Heavy" bottom shadow to anchor it */
+  /* This shadow moves 'down' as the card tilts 'back' */
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8), 
+              0 10px 20px rgba(0, 0, 0, 0.4);
 
-//   /* If you have a label inside, it needs to hit the walls too */
-//   &::part(label-container) {
-//     width: 100% !important;
-//     flex: 1 1 auto !important;
-//   }
-//   }
+  /* 4. Ensure it stays at the bottom */
+  margin-bottom: -20px; /* Slight overlap with the screen edge looks more like a fixed podium */
+  
+  transition: transform 0.3s ease; /* Makes it feel "interactive" */
+    width: clamp(320px, 60vw, 800px);
+  
+}
 
-  /* Target the Label specifically */
-  // ion-item {
+/* 2. Optional: Add a subtle "grain" texture overlay */
+::ng-deep .mahogany-ledger .p-card-body {
+  background-image: url('https://www.transparenttextures.com/patterns/dark-wood.png');
+  background-repeat: repeat;
+  padding: 0; /* Let's us control the layout of the "Letterhead" */
+  min-height: 50vh;   /* At least 40% of the screen height */
+  max-height: 85vh;   /* Never taller than 85% (leaves room for your lake background) */
+  
+  /* Use 'vw' (Viewport Width) for the horizontal scale */
+  width: 100%;        /* Fill most of the screen on mobile */
+  // max-width: 450px;   /* But stop growing once it hits a nice desktop size */
 
-  //   --color: rgba(255, 255, 255, 0.9);
-  //   --placeholder-color: rgba(255, 255, 255, 0.3);
-
-  //   /* Responsive Font Scaling from your CSS */
-  //   font-size: clamp(1.1rem, 2vw, 1.5rem);
-  //   font-weight: 800;
-  //   letter-spacing: 0.1rem;
-  //   text-transform: uppercase;
-
-  //   /* Styling the Label part in Ionic */
-  //   &::part(label) {
-  //     margin-bottom: 1rem;
-  //     transition: all 0.4s ease;
-  //   }
-  // }
-
-  /* The "Pipe Ignites" state (Error) */
-  // &.has-error {
-  //   border-bottom: 2px solid #FF7F50; // The bottom border turns coral too
-
-  //   ion-input::part(label) {
-  //     color: #FF7F50 !important;
-  //     text-shadow:
-  //       0 0 5px rgba(255, 127, 80, 0.8),
-  //       0 0 15px rgba(255, 127, 80, 0.3);
-  //   }
-  // }
+  overflow-y: auto;
+  /* 1. The Width Logic: min, middle (scaling), max */
+  /* This says: "Be at least 320px, try to be 60% of the screen, but stop at 800px" */
 
 }
-ion-input.cyber-terminal-input {
-min-width: 500px !important;
-  width: 100%; // Let it grow larger than 500px if the card is huge
 
-  &::part(native) {
-    /* Step 2: Force the internal 'Legacy' input to match that floor */
-    min-width: 500px !important;
-    width: 100%;
+.outpost-wrapper {
+  /* This points to your assets folder */
+  background-image: url('/assets/images/outpost.png');
+  
+  /* These three lines make the magic happen */
+  background-size: cover;      /* Scales the image to fit the screen */
+  background-position: center;  /* Keeps the middle of the photo in view */
+  background-repeat: no-repeat;
+  
+  /* This ensures the div takes up the whole screen */
+  height: 100vh;
+  width: 100%;
+  
+  /* Flexbox centers your login card perfectly */
+  display: flex;
+  flex-direction: column; 
+  align-items: center;      /* Keeps it centered horizontally */
+  justify-content: flex-end; /* Pins everything to the bottom */
+  
+  min-height: 100vh;        /* Essential: tells the wrapper to be full-screen */
+  padding-bottom: 2rem;     /* Optional: adds a little "breathing room" so it's not touching the literal edge */
+
+}
+
+
+/* 1. The Paper Sheet */
+.ledger-letterhead, 
+.ledger-body {
+    background-color: #fdf5e6; /* Old Lace / Parchment color */
+    background-image: url('https://www.transparenttextures.com/patterns/cream-paper.png');
     
-    /* Step 3: Center the text within that 500px span */
+    /* This makes the paper look like it's sitting ON the wood */
+    margin: 0 1.5rem; 
+    padding: 2rem;
+    
+    /* Ink color for all text on the paper */
+    color: #3e2723; 
+    
+    /* A subtle shadow to give the paper "edge" depth */
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.05), 2px 2px 5px rgba(0,0,0,0.2);
+}
+
+/* 2. Top of the Paper (The Header) */
+.ledger-letterhead {
+    margin-top: 1.5rem; /* Space from the top mahogany edge */
+    border-radius: 8px 8px 0 0;
     text-align: center;
-    letter-spacing: 2px;
-  }
-}
-  /* 1. The Variable Fix (Ionic's preferred way) */
-  // --display: block; 
-  // --color: blue;
-  // --flex: 1 1 100% !important;
-  /* 2. The CSS Fix (The "Brute Force" way) */
-
-  
-  /* 3. The Growth Command */
-  // width: 100% !important;
-
-
-  /* 4. Ensuring the internal parts follow the Host */
-  // &::part(container) {
-  //   width: 100% !important;
-  //   display: flex !important;
-  // }
-
-//   &::part(native) {
-//     // min-width: 500px;
-//     // width: 100% !important;
-//     // text-align: center; /* This centers the text inside the now-huge box */
-//   }
-// }
-// .cyber-terminal-input {
-//   /* 1. Base State (High-contrast white metadata) */
-//   --label-color: rgba(255, 255, 255, 0.9);
-//   --label-border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-//   --label-font-size: clamp(1.1rem, 2vw, 1.5rem);
-//   --label-font-weight: 800;
-//   --label-letter-spacing: 0.1rem;
-//   --label-text-transform: uppercase;
-//   --label-margin-bottom: 1rem;
-//   --label-transition: all 0.4s ease;
-//   --label-font-family: 'monospace';
-//   --label-margin-bottom: 2rem;
-
-  
-//   // --native-width: 1000px;
-
-//   // flex-direction: column;
-  
-//   /* 2. Occupy the full width of the parent flex container */
-//   // width: 100% !important;
-//   // flex: 1 1 auto;
-
-
-
-//   /* 2. The "Ignition" State (When the pipe turns Coral) */
-//   &.has-error {
-//     --label-color: #FF7F50 !important;
-//     /* Your Coral color */
-//     --label-color-focused: #FF7F50 !important;
-
-//     &::part(label) {
-//       /* Porting your Neon Aura text-shadow */
-//       text-shadow:
-//         0 0 5px rgba(255, 127, 80, 0.8),
-//         /* Hot core */
-//         0 0 15px rgba(255, 127, 80, 0.3);
-//       /* Atmospheric glow */
-
-//       /* Visual "Alert" - optional slight scale up on error */
-//       transform: scale(1.02);
-//     }
-
+    border-bottom: 1px dashed #d7ccc8; /* A "perforated" look */
     
+    h1 {
+        font-family: 'Georgia', serif;
+        margin: 0;
+        font-size: 2rem;
+        letter-spacing: 1px;
+    }
+}
 
-//     /* The input text itself should also dim or turn coral to match */
-//     color: #FF7F50;
-//   }
+/* 3. Bottom of the Paper (The Form Area) */
+.ledger-body {
+    margin-bottom: 1.5rem; /* Space from the bottom mahogany edge */
+    border-radius: 0 0 8px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    // width: 100%;
+}
+
+// .field-container {
+//     // width: 100%;
+//     // display: block; 
+//     // position: relative;
 // }
+
+/* 3. Force the PrimeNG components to fill that row */
+::ng-deep {
+    .p-float-label, 
+    .p-inputtext, 
+    .p-password, 
+    .p-password input {
+        width: 100% !important;
+    }
+
+    .p-password{
+      display: block !important;
+    }
+    /* Adjust the label position so it doesn't overlap the "ink" line weirdly */
+    // .p-float-label label {
+    //     margin-top: -0.5rem; 
+    // }
+
+}
+

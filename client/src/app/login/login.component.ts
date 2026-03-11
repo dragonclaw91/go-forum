@@ -1,24 +1,14 @@
-import { Component, ChangeDetectionStrategy, signal, NgModule, computed, inject, OnInit} from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, NgModule, computed, inject, OnInit } from '@angular/core';
 import { RouterOutlet, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../auth/auth.service';
 import { ReactiveFormsModule } from '@angular/forms';
-import { addIcons } from 'ionicons';
-import { eyeOutline, eyeOffOutline } from 'ionicons/icons';
-import {
-  IonButton,
-  IonCard,
-  IonCardContent,
-  IonCardHeader,
-  IonCardSubtitle,
-  IonCardTitle,
-  IonToast,
-  Platform,
-  IonItem,
-  IonInput
+import { CardModule, } from 'primeng/card';
+import { InputTextModule } from 'primeng/inputtext';
+import { PasswordModule } from 'primeng/password';
+import { ButtonModule } from 'primeng/button';
 
-} from '@ionic/angular/standalone';
 
 
 /* we are using enums for type saftey and to avoid passing around magic strings 
@@ -45,15 +35,10 @@ export interface AuthState {
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    IonButton,
-    IonCard,
-    IonCardContent,
-    IonCardHeader,
-    IonCardSubtitle,
-    IonCardTitle,
-    IonToast,
-    IonItem,
-    IonInput
+    CardModule,
+    InputTextModule,
+    PasswordModule,
+    ButtonModule,
   ],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
@@ -68,17 +53,11 @@ export class LoginComponent implements OnInit {
   private errorTimer: any;
 
 
-  constructor(private platform: Platform) { }
+
 
   // simialar to use effect in react
   ngOnInit(): void {
     console.log('Component is now on the DOM!');
-
-    addIcons({ 'eye-outline': eyeOutline, 'eye-off-outline': eyeOffOutline });
-  }
-  get isMobile() {
-    // Returns true for phones and tablets, false for desktop web
-    return this.platform.is('mobile') || this.platform.is('tablet');
   }
 
   hidePassword = signal(false)

@@ -1,35 +1,63 @@
-<div class="page   test">
-  <h1 class="header center">Welcome to the App</h1>
-  <div class=" row h-100 center ">
-    <div class=" container  d-flex justify-content-center align-items-center">
-      <ion-card mode="md">
-        <ion-card-header>
-          <ion-card-title>
-            <h1 class=" text-center w-100">
-              {{ isLoginMode() ? 'Login' : 'Sign Up' }}
-            </h1>
-          </ion-card-title>
-        </ion-card-header>
-        <ion-card-content >
-          @if (authState().errorMessage) {
-          <ion-toast [isOpen]="this.hasError()" [message]="authState().errorMessage"
-            [position]="isMobile ? 'bottom' : 'top'" [duration]="isMobile ? 5000 : 0" class="neon-adaptive-toast">
-          </ion-toast>
-          }
-          <form  class="d-flex flex-column flex-grow-1 justify-content-around" (ngSubmit)="onSignIn()" >
-            <div class="mb-3" >
-              <ion-item class="cyber-item " >
-                <ion-input class="cyber-terminal-input text-center"  label="Stacked labeljglfkdjaglfjdlgjlfdsjgljklgj" labelPlacement="stacked" placeholder="Enter text"></ion-input>
-              </ion-item>
-            </div>
-          </form>
+<!-- <div class="page   test"> -->
 
-        </ion-card-content>
-      </ion-card>
+<div class=" row h-100 center ">
+
+  <div class=" container   outpost-wrapper">
+
+    <div class=" mahogany-ledger">
+      <p-card >
+        <!-- <h1 class="header center">Welcome to the App</h1> -->
+        <div class="ledger-letterhead">
+          <h1>Lakeside Communications</h1>
+          <p><i>Official Outpost Logbook</i></p>
+        </div>
+
+      <div class="ledger-body">
+      
+      <div class="field-container">
+        <span class="p-float-label">
+          <input pInputText 
+                 id="username" 
+                 type="text" 
+                 class="w-full ink-text" 
+                 autocomplete="off" />
+          <label for="username">IDENTIFICATION (Username)</label>
+        </span>
+      </div>
+
+      <div class="field-container">
+        <span class="p-float-label">
+          <p-password 
+              id="password" 
+              [feedback]="false" 
+              [toggleMask]="true" 
+              styleClass="w-full" 
+              inputStyleClass="w-full ink-text">
+          </p-password>
+          <label for="password">ACCESS KEY (Password)</label>
+        </span>
+      </div>
+
+      <div class="action-zone">
+        <button pButton 
+                label="STAMP LOGBOOK" 
+                icon="pi pi-file-edit" 
+                class="p-button-warning p-button-raised stamp-button">
+        </button>
+      </div>
+
+  
+
+    </div>
+    <div class="ledger-footer row">
+        <a routerLink="/register">Request New Credentials</a>
+      </div>
+      </p-card>
+    </div>
 
 
 
-      <!-- <div class="card" [class.apply-shake]="authState().shakeTrigger">
+    <!-- <div class="card" [class.apply-shake]="authState().shakeTrigger">
         <div class="card-body p-5 d-flex flex-column justify-content-between">
           <h1 class="card-title bottom text-center w-100">
             {{ isLoginMode() ? 'Login' : 'Sign Up' }}
@@ -84,6 +112,6 @@
         </form>
 
       </div> -->
-    </div>
   </div>
 </div>
+<!-- </div> -->
